@@ -1,0 +1,59 @@
+
+{
+  "app": {
+    "name": "Bora Grow",
+    "tagline": "Tu plataforma completa de cultivo"
+  },
+  "nav": {
+    "dashboard": "Panel",
+    "calculator": "Calculadora",
+    "recipes": "Recetas",
+    "plants": "Plantas",
+    "profile": "Perfil",
+    "login": "Iniciar Sesión",
+    "logout": "Cerrar Sesión"
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "add": "Agregar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "welcome": "Bienvenido",
+    "language": "Idioma"
+  },
+  "dashboard": {
+    "title": "Panel",
+    "subtitle": "Gestiona tus plantas y recetas",
+    "totalPlants": "Total de Plantas",
+    "totalRecipes": "Total de Recetas",
+    "recentActivity": "Actividad Reciente"
+  },
+  "calculator": {
+    "title": "Calculadora de Nutrientes",
+    "subtitle": "Calcula la dosis perfecta para tus plantas"
+  },
+  "recipes": {
+    "title": "Recetas de Nutrientes",
+    "subtitle": "Gestiona tus recetas personalizadas",
+    "createNew": "Nueva Receta"
+  },
+  "plants": {
+    "title": "Mis Plantas",
+    "subtitle": "Rastrea el crecimiento de tus plantas",
+    "addPlant": "Agregar Planta"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "forgotPassword": "Olvidé mi Contraseña",
+    "dontHaveAccount": "¿No tienes una cuenta?",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?"
+  }
+}
