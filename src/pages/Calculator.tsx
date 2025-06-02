@@ -1,6 +1,7 @@
 
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calculator as CalculatorIcon } from 'lucide-react';
 
 export function Calculator() {
   const { t } = useTranslation();
@@ -25,7 +26,7 @@ export function Calculator() {
         </CardHeader>
         <CardContent>
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <Calculator className="h-12 w-12 mx-auto mb-4" />
+            <CalculatorIcon className="h-12 w-12 mx-auto mb-4" />
             <p className="text-lg font-medium mb-2">Calculadora em Desenvolvimento</p>
             <p>A calculadora de nutrientes será migrada do repositório original mantendo todas as funcionalidades.</p>
           </div>
