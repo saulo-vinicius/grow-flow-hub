@@ -9,7 +9,120 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      custom_substances: {
+        Row: {
+          created_at: string | null
+          elements: Json | null
+          formula: string | null
+          id: string
+          name: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          elements?: Json | null
+          formula?: string | null
+          id?: string
+          name: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          elements?: Json | null
+          formula?: string | null
+          id?: string
+          name?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      nutrient_recipes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          ec_value: number | null
+          elements: Json | null
+          id: string
+          name: string
+          ph_value: number | null
+          solution_volume: number | null
+          substances: Json | null
+          updated_at: string | null
+          user_id: string | null
+          volume_unit: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          ec_value?: number | null
+          elements?: Json | null
+          id?: string
+          name: string
+          ph_value?: number | null
+          solution_volume?: number | null
+          substances?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          volume_unit?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          ec_value?: number | null
+          elements?: Json | null
+          id?: string
+          name?: string
+          ph_value?: number | null
+          solution_volume?: number | null
+          substances?: Json | null
+          updated_at?: string | null
+          user_id?: string | null
+          volume_unit?: string | null
+        }
+        Relationships: []
+      }
+      plants: {
+        Row: {
+          added_on: string | null
+          applied_recipes: Json | null
+          growth_phase: string | null
+          id: string
+          image_url: string | null
+          last_updated: string | null
+          location: string | null
+          name: string
+          species: string | null
+          stats: Json | null
+          user_id: string
+        }
+        Insert: {
+          added_on?: string | null
+          applied_recipes?: Json | null
+          growth_phase?: string | null
+          id?: string
+          image_url?: string | null
+          last_updated?: string | null
+          location?: string | null
+          name: string
+          species?: string | null
+          stats?: Json | null
+          user_id: string
+        }
+        Update: {
+          added_on?: string | null
+          applied_recipes?: Json | null
+          growth_phase?: string | null
+          id?: string
+          image_url?: string | null
+          last_updated?: string | null
+          location?: string | null
+          name?: string
+          species?: string | null
+          stats?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

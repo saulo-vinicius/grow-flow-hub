@@ -1,11 +1,88 @@
 
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Calendar, Beaker, Trash2 } from 'lucide-react';
+import { CreateRecipeDialog } from '@/components/recipes/CreateRecipeDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+
+interface Recipe {
+  id: string;
+  name: string;
+  description: string;
+  solution_volume: number;
+  volume_unit: string;
+  created_at: string;
+}
 
 export function Recipes() {
   const { t } = useTranslation();
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const fetchRecipes = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('nutrient_recipes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRecipes(data || []);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar receitas",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteRecipe = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('nutrient_recipes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Receita removida",
+        description: "Receita removida com sucesso"
+      });
+
+      fetchRecipes();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: "Erro ao remover receita",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchRecipes();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Carregando receitas...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -18,27 +95,63 @@ export function Recipes() {
             {t('recipes.subtitle')}
           </p>
         </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          {t('recipes.createNew')}
-        </Button>
+        <CreateRecipeDialog onRecipeCreated={fetchRecipes} />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Suas Receitas</CardTitle>
-          <CardDescription>
-            Gerencie suas receitas personalizadas de nutrientes
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-            <Plus className="h-12 w-12 mx-auto mb-4" />
-            <p className="text-lg font-medium mb-2">Nenhuma receita criada</p>
-            <p>Comece criando sua primeira receita de nutrientes!</p>
-          </div>
-        </CardContent>
-      </Card>
+      {recipes.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Suas Receitas</CardTitle>
+            <CardDescription>
+              Gerencie suas receitas personalizadas de nutrientes
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              <Plus className="h-12 w-12 mx-auto mb-4" />
+              <p className="text-lg font-medium mb-2">Nenhuma receita criada</p>
+              <p>Comece criando sua primeira receita de nutrientes!</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recipes.map((recipe) => (
+            <Card key={recipe.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{recipe.name}</CardTitle>
+                    <CardDescription className="mt-2">
+                      {recipe.description || 'Sem descrição'}
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteRecipe(recipe.id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Beaker className="h-4 w-4" />
+                    <span>{recipe.solution_volume} {recipe.volume_unit}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>{new Date(recipe.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
