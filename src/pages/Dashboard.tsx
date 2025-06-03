@@ -1,12 +1,47 @@
 
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calculator, Plus, Grid2x2, Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export function Dashboard() {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const [plantsCount, setPlantsCount] = useState(0);
+  const [recipesCount, setRecipesCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      fetchCounts();
+    }
+  }, [user]);
+
+  const fetchCounts = async () => {
+    if (!user) return;
+
+    try {
+      // Contar plantas
+      const { count: plantsCount } = await supabase
+        .from('plants')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      // Contar receitas
+      const { count: recipesCount } = await supabase
+        .from('nutrient_recipes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
+
+      setPlantsCount(plantsCount || 0);
+      setRecipesCount(recipesCount || 0);
+    } catch (error) {
+      console.error('Erro ao buscar contadores:', error);
+    }
+  };
 
   const quickActions = [
     {
@@ -20,14 +55,14 @@ export function Dashboard() {
       title: t('recipes.createNew'),
       description: 'Criar uma nova receita de nutrientes',
       icon: Plus,
-      href: '/recipes/new',
+      href: '/recipes',
       color: 'bg-blue-500 hover:bg-blue-600',
     },
     {
       title: t('plants.addPlant'),
       description: 'Adicionar uma nova planta',
       icon: Plus,
-      href: '/plants/new',
+      href: '/plants',
       color: 'bg-purple-500 hover:bg-purple-600',
     },
   ];
@@ -35,13 +70,13 @@ export function Dashboard() {
   const stats = [
     {
       title: t('dashboard.totalPlants'),
-      value: '0',
+      value: plantsCount.toString(),
       icon: Grid2x2,
       color: 'text-green-600',
     },
     {
       title: t('dashboard.totalRecipes'),
-      value: '0',
+      value: recipesCount.toString(),
       icon: Star,
       color: 'text-blue-600',
     },

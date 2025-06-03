@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, MapPin, Leaf, Calendar, Trash2 } from 'lucide-react';
 import { CreatePlantDialog } from '@/components/plants/CreatePlantDialog';
+import { PlantDetailsDialog } from '@/components/plants/PlantDetailsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -78,10 +79,25 @@ export function Plants() {
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
+      case 'germinacao': return 'bg-yellow-100 text-yellow-800';
+      case 'plantula': return 'bg-green-100 text-green-800';
       case 'vegetativa': return 'bg-green-100 text-green-800';
-      case 'floracao': return 'bg-yellow-100 text-yellow-800';
-      case 'frutificacao': return 'bg-orange-100 text-orange-800';
+      case 'floracao': return 'bg-orange-100 text-orange-800';
+      case 'frutificacao': return 'bg-red-100 text-red-800';
+      case 'colheita': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getPhaseLabel = (phase: string) => {
+    switch (phase) {
+      case 'germinacao': return 'Germinação';
+      case 'plantula': return 'Plântula';
+      case 'vegetativa': return 'Vegetativa';
+      case 'floracao': return 'Floração';
+      case 'frutificacao': return 'Frutificação';
+      case 'colheita': return 'Colheita';
+      default: return phase;
     }
   };
 
@@ -154,12 +170,18 @@ export function Plants() {
                   <div className="flex items-center gap-2">
                     <Leaf className="h-4 w-4" />
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPhaseColor(plant.growth_phase)}`}>
-                      {plant.growth_phase}
+                      {getPhaseLabel(plant.growth_phase)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="h-4 w-4" />
                     <span>Adicionada em {new Date(plant.added_on).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="pt-2">
+                    <PlantDetailsDialog 
+                      plantId={plant.id}
+                      plantName={plant.name}
+                    />
                   </div>
                 </div>
               </CardContent>

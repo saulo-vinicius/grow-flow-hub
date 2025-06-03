@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Plus, Calendar, Beaker, Trash2 } from 'lucide-react';
 import { CreateRecipeDialog } from '@/components/recipes/CreateRecipeDialog';
+import { ApplyRecipeDialog } from '@/components/recipes/ApplyRecipeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -137,14 +138,21 @@ export function Recipes() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Beaker className="h-4 w-4" />
                     <span>{recipe.solution_volume} {recipe.volume_unit}</span>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="h-4 w-4" />
                     <span>{new Date(recipe.created_at).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                  <div className="pt-2">
+                    <ApplyRecipeDialog 
+                      recipeId={recipe.id}
+                      recipeName={recipe.name}
+                      onRecipeApplied={fetchRecipes}
+                    />
                   </div>
                 </div>
               </CardContent>

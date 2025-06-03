@@ -81,6 +81,48 @@ export type Database = {
         }
         Relationships: []
       }
+      plant_recipe_applications: {
+        Row: {
+          applied_at: string | null
+          id: string
+          notes: string | null
+          plant_id: string
+          recipe_id: string
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          id?: string
+          notes?: string | null
+          plant_id: string
+          recipe_id: string
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          id?: string
+          notes?: string | null
+          plant_id?: string
+          recipe_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plant_recipe_applications_plant_id_fkey"
+            columns: ["plant_id"]
+            isOneToOne: false
+            referencedRelation: "plants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "plant_recipe_applications_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "nutrient_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plants: {
         Row: {
           added_on: string | null

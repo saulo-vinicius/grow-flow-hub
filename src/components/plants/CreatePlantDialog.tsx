@@ -19,7 +19,7 @@ export function CreatePlantDialog({ onPlantCreated }: CreatePlantDialogProps) {
   const [name, setName] = useState('');
   const [species, setSpecies] = useState('');
   const [location, setLocation] = useState('');
-  const [growthPhase, setGrowthPhase] = useState('vegetativa');
+  const [growthPhase, setGrowthPhase] = useState('germinacao');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -52,7 +52,7 @@ export function CreatePlantDialog({ onPlantCreated }: CreatePlantDialogProps) {
       setName('');
       setSpecies('');
       setLocation('');
-      setGrowthPhase('vegetativa');
+      setGrowthPhase('germinacao');
       setOpen(false);
       onPlantCreated();
     } catch (error: any) {
@@ -114,9 +114,12 @@ export function CreatePlantDialog({ onPlantCreated }: CreatePlantDialogProps) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="germinacao">Germinação</SelectItem>
+                <SelectItem value="plantula">Plântula</SelectItem>
                 <SelectItem value="vegetativa">Vegetativa</SelectItem>
                 <SelectItem value="floracao">Floração</SelectItem>
                 <SelectItem value="frutificacao">Frutificação</SelectItem>
+                <SelectItem value="colheita">Colheita</SelectItem>
               </SelectContent>
             </Select>
           </div>
