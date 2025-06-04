@@ -16,9 +16,10 @@ interface SaveRecipeDialogProps {
   targets: NutrientTarget;
   solutionVolume: number;
   volumeUnit: string;
+  hasCalculationResult: boolean;
 }
 
-export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUnit }: SaveRecipeDialogProps) {
+export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUnit, hasCalculationResult }: SaveRecipeDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -30,6 +31,24 @@ export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUn
     e.preventDefault();
     if (!user) return;
 
+    if (!hasCalculationResult) {
+      toast({
+        title: "Erro",
+        description: "Realize o cálculo antes de salvar a receita",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (substances.length === 0) {
+      toast({
+        title: "Erro",
+        description: "Adicione pelo menos uma substância antes de salvar",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -38,8 +57,8 @@ export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUn
           name,
           description,
           user_id: user.id,
-          substances: substances,
-          elements: targets,
+          substances: substances as any,
+          elements: targets as any,
           solution_volume: solutionVolume,
           volume_unit: volumeUnit
         });
@@ -68,7 +87,7 @@ export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUn
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2" variant="outline">
+        <Button className="gap-2" variant="outline" disabled={!hasCalculationResult || substances.length === 0}>
           <Save className="h-4 w-4" />
           Salvar Receita
         </Button>

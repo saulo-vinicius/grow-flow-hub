@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, ShoppingCart } from 'lucide-react';
+import { Trash2, Plus, ShoppingCart, Search, User, Beaker } from 'lucide-react';
 import { Substance, Element } from '@/types/calculator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,8 +16,15 @@ interface SubstanceSelectorProps {
   onSubstancesChange: (substances: Substance[]) => void;
 }
 
+const VALID_ELEMENTS = [
+  "N (NO3-)", "N (NH4+)", "P", "P2O5", "K", "K2O", "Ca", "CaO", 
+  "Mg", "MgO", "S", "Fe", "Mn", "Zn", "B", "Cu", "Si", "SiO2", "Mo", "Na", "Cl"
+];
+
 export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: SubstanceSelectorProps) {
   const [availableSubstances, setAvailableSubstances] = useState<Substance[]>([]);
+  const [filteredSubstances, setFilteredSubstances] = useState<Substance[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedSubstanceId, setSelectedSubstanceId] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -40,6 +47,24 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     fetchSubstances();
   }, []);
 
+  useEffect(() => {
+    const filtered = availableSubstances.filter(substance =>
+      substance.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      substance.formula.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    
+    // Ordenar: substâncias do usuário primeiro, depois as públicas
+    const sorted = filtered.sort((a, b) => {
+      const aIsUser = a.id.startsWith('user_');
+      const bIsUser = b.id.startsWith('user_');
+      if (aIsUser && !bIsUser) return -1;
+      if (!aIsUser && bIsUser) return 1;
+      return a.name.localeCompare(b.name);
+    });
+    
+    setFilteredSubstances(sorted);
+  }, [availableSubstances, searchTerm]);
+
   const fetchSubstances = async () => {
     try {
       const { data, error } = await supabase
@@ -49,10 +74,10 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       if (error) throw error;
 
       const substances: Substance[] = data.map(item => ({
-        id: item.id,
+        id: item.user_id ? `user_${item.id}` : item.id,
         name: item.name,
         formula: item.formula || '',
-        elements: item.elements as Element[] || []
+        elements: (item.elements as any) || []
       }));
 
       setAvailableSubstances(substances);
@@ -65,11 +90,32 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     }
   };
 
+  const convertElement = (symbol: string, percentage: number): Element => {
+    // Converter óxidos para elementos
+    const conversions: { [key: string]: { symbol: string, factor: number } } = {
+      'P2O5': { symbol: 'P', factor: 0.436 },
+      'K2O': { symbol: 'K', factor: 0.830 },
+      'CaO': { symbol: 'Ca', factor: 0.715 },
+      'MgO': { symbol: 'Mg', factor: 0.603 },
+      'SiO2': { symbol: 'Si', factor: 0.467 }
+    };
+
+    if (conversions[symbol]) {
+      return {
+        symbol: conversions[symbol].symbol,
+        percentage: percentage * conversions[symbol].factor
+      };
+    }
+
+    return { symbol, percentage };
+  };
+
   const addSubstanceToSelected = () => {
     const substance = availableSubstances.find(s => s.id === selectedSubstanceId);
     if (substance && !selectedSubstances.find(s => s.id === substance.id)) {
       onSubstancesChange([...selectedSubstances, substance]);
       setSelectedSubstanceId('');
+      setSearchTerm('');
     }
   };
 
@@ -78,19 +124,41 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
   };
 
   const addElement = () => {
-    if (newElement.symbol && newElement.percentage !== undefined && newElement.percentage > 0) {
-      setNewSubstance(prev => ({
-        ...prev,
-        elements: [...(prev.elements || []), newElement as Element]
-      }));
-      setNewElement({ symbol: '', percentage: 0 });
-    } else if (newElement.percentage !== undefined && newElement.percentage <= 0) {
+    if (!newElement.symbol || !VALID_ELEMENTS.includes(newElement.symbol)) {
+      toast({
+        title: "Elemento inválido",
+        description: "Selecione um elemento da lista válida",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newElement.percentage === undefined || newElement.percentage <= 0) {
       toast({
         title: "Valor inválido",
         description: "O valor do elemento deve ser maior que 0%",
         variant: "destructive"
       });
+      return;
     }
+
+    const convertedElement = convertElement(newElement.symbol, newElement.percentage);
+    
+    setNewSubstance(prev => {
+      const existingElements = prev.elements || [];
+      const existingIndex = existingElements.findIndex(el => el.symbol === convertedElement.symbol);
+      
+      if (existingIndex >= 0) {
+        // Somar se o elemento já existe (ex: diferentes formas de N)
+        const updatedElements = [...existingElements];
+        updatedElements[existingIndex].percentage += convertedElement.percentage;
+        return { ...prev, elements: updatedElements };
+      } else {
+        return { ...prev, elements: [...existingElements, convertedElement] };
+      }
+    });
+    
+    setNewElement({ symbol: '', percentage: 0 });
   };
 
   const removeElement = (index: number) => {
@@ -98,6 +166,35 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       ...prev,
       elements: prev.elements?.filter((_, i) => i !== index) || []
     }));
+  };
+
+  const deleteCustomSubstance = async (substanceId: string) => {
+    if (!user || !substanceId.startsWith('user_')) return;
+
+    const actualId = substanceId.replace('user_', '');
+    
+    try {
+      const { error } = await supabase
+        .from('custom_substances')
+        .delete()
+        .eq('id', actualId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Substância removida",
+        description: "Substância personalizada removida com sucesso"
+      });
+
+      fetchSubstances();
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: "Erro ao remover substância",
+        variant: "destructive"
+      });
+    }
   };
 
   const saveCustomSubstance = async () => {
@@ -110,7 +207,6 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       return;
     }
 
-    // Verificar se algum elemento tem valor zero
     const hasZeroElement = newSubstance.elements.some(el => el.percentage <= 0);
     if (hasZeroElement) {
       toast({
@@ -129,7 +225,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
           user_id: user.id,
           name: newSubstance.name,
           formula: newSubstance.formula,
-          elements: newSubstance.elements
+          elements: newSubstance.elements as any
         });
 
       if (error) throw error;
@@ -158,18 +254,34 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       {/* Seletor de substâncias */}
       <Card>
         <CardHeader>
-          <CardTitle>Banco de Substâncias</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Beaker className="h-5 w-5" />
+            Banco de Substâncias
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Buscar substâncias..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+
           <div className="flex gap-2">
             <Select value={selectedSubstanceId} onValueChange={setSelectedSubstanceId}>
               <SelectTrigger className="flex-1">
                 <SelectValue placeholder="Selecione uma substância" />
               </SelectTrigger>
               <SelectContent>
-                {availableSubstances.map((substance) => (
+                {filteredSubstances.map((substance) => (
                   <SelectItem key={substance.id} value={substance.id}>
-                    {substance.name} ({substance.formula})
+                    <div className="flex items-center gap-2">
+                      {substance.id.startsWith('user_') && <User className="h-3 w-3" />}
+                      <span>{substance.name} ({substance.formula})</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -181,6 +293,15 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
               <ShoppingCart className="h-4 w-4 mr-2" />
               Adicionar
             </Button>
+            {selectedSubstanceId && selectedSubstanceId.startsWith('user_') && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => deleteCustomSubstance(selectedSubstanceId)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
           
           <Button 
@@ -202,14 +323,17 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
         <CardContent>
           {selectedSubstances.length === 0 ? (
             <p className="text-gray-500 text-center py-4">
-              Nenhuma substância selecionada
+              Nenhuma substância selecionada.
             </p>
           ) : (
             <div className="space-y-2">
               {selectedSubstances.map((substance) => (
                 <div key={substance.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
-                    <div className="font-medium">{substance.name}</div>
+                    <div className="flex items-center gap-2">
+                      {substance.id.startsWith('user_') && <User className="h-3 w-3" />}
+                      <span className="font-medium">{substance.name}</span>
+                    </div>
                     <div className="text-sm text-gray-500">{substance.formula}</div>
                     <div className="text-xs text-gray-400">
                       {substance.elements.map(el => `${el.symbol}: ${el.percentage}%`).join(', ')}
@@ -262,7 +386,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
               <Label>Elementos</Label>
               {newSubstance.elements?.map((element, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <span className="text-sm">{element.symbol}: {element.percentage}%</span>
+                  <span className="text-sm">{element.symbol}: {element.percentage.toFixed(2)}%</span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -274,20 +398,29 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
               ))}
               
               <div className="flex gap-2">
-                <Input
-                  placeholder="Elemento (ex: N)"
-                  value={newElement.symbol || ''}
-                  onChange={(e) => setNewElement(prev => ({ ...prev, symbol: e.target.value }))}
-                  className="flex-1"
-                />
+                <Select 
+                  value={newElement.symbol || ''} 
+                  onValueChange={(value) => setNewElement(prev => ({ ...prev, symbol: value }))}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Selecione elemento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {VALID_ELEMENTS.map(element => (
+                      <SelectItem key={element} value={element}>
+                        {element}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <Input
                   type="number"
                   placeholder="% (ex: 15.5)"
                   value={newElement.percentage || ''}
                   onChange={(e) => setNewElement(prev => ({ ...prev, percentage: parseFloat(e.target.value) || 0 }))}
                   className="flex-1"
-                  min="0.01"
-                  step="0.01"
+                  min="0.001"
+                  step="0.001"
                 />
                 <Button onClick={addElement} size="sm">
                   <Plus className="h-4 w-4" />

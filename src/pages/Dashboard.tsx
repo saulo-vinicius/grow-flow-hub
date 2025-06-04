@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calculator, Plus, Grid2x2, Star } from 'lucide-react';
+import { Calculator, Plus, Leaf, Flask } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -71,13 +71,13 @@ export function Dashboard() {
     {
       title: t('dashboard.totalPlants'),
       value: plantsCount.toString(),
-      icon: Grid2x2,
+      icon: Leaf,
       color: 'text-green-600',
     },
     {
       title: t('dashboard.totalRecipes'),
       value: recipesCount.toString(),
-      icon: Star,
+      icon: Flask,
       color: 'text-blue-600',
     },
   ];

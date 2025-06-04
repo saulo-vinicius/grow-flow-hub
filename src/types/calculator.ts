@@ -32,6 +32,7 @@ export interface CalculationResult {
   totalWeight: number;
   achievedElements: Element[];
   deviation: number;
+  predictedEC?: number;
 }
 
 export interface NutrientTarget {
@@ -47,4 +48,7 @@ export interface NutrientTarget {
   B: number;
   Cu: number;
   Mo: number;
+  Si: number;
+  Na: number;
+  Cl: number;
 }

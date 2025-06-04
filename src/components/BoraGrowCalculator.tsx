@@ -14,30 +14,12 @@ import { Substance, NutrientTarget, CalculationResult } from '@/types/calculator
 import { Calculator } from 'lucide-react';
 
 export function BoraGrowCalculator() {
-  const [substances, setSubstances] = useState<Substance[]>([
-    {
-      id: 'nitrato_calcio',
-      name: 'Nitrato de Cálcio',
-      formula: 'Ca(NO3)2',
-      elements: [
-        { symbol: 'N', percentage: 15.5 },
-        { symbol: 'Ca', percentage: 19.0 }
-      ]
-    },
-    {
-      id: 'sulfato_magnesio',
-      name: 'Sulfato de Magnésio',
-      formula: 'MgSO4',
-      elements: [
-        { symbol: 'Mg', percentage: 9.8 },
-        { symbol: 'S', percentage: 13.0 }
-      ]
-    }
-  ]);
+  const [substances, setSubstances] = useState<Substance[]>([]);
 
   const [targets, setTargets] = useState<NutrientTarget>({
     N: 200, P: 50, K: 300, Ca: 200, Mg: 50, S: 100,
-    Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05
+    Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
+    Si: 0, Na: 0, Cl: 0
   });
 
   const [solutionVolume, setSolutionVolume] = useState(1000);
@@ -108,6 +90,7 @@ export function BoraGrowCalculator() {
                   targets={targets}
                   solutionVolume={solutionVolume}
                   volumeUnit={volumeUnit}
+                  hasCalculationResult={result !== null}
                 />
               </div>
             </CardContent>
