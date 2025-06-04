@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, ShoppingCart, Search, User, Beaker } from 'lucide-react';
+import { Trash2, Plus, ShoppingCart, User, Beaker } from 'lucide-react';
 import { Substance, Element } from '@/types/calculator';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -40,7 +40,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
 
   const [newElement, setNewElement] = useState<Partial<Element>>({
     symbol: '',
-    percentage: 0
+    percentage: undefined
   });
 
   useEffect(() => {
@@ -158,7 +158,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       }
     });
     
-    setNewElement({ symbol: '', percentage: 0 });
+    setNewElement({ symbol: '', percentage: undefined });
   };
 
   const removeElement = (index: number) => {
@@ -260,26 +260,27 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Buscar substâncias..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-
           <div className="flex gap-2">
-            <Select value={selectedSubstanceId} onValueChange={setSelectedSubstanceId}>
+            <Select value={selectedSubstanceId} onValueChange={(value) => {
+              setSelectedSubstanceId(value);
+              setSearchTerm('');
+            }}>
               <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Selecione uma substância" />
+                <SelectValue placeholder="Buscar e selecionar substância..." />
               </SelectTrigger>
               <SelectContent>
+                <div className="p-2">
+                  <Input
+                    placeholder="Digite para buscar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="mb-2"
+                  />
+                </div>
                 {filteredSubstances.map((substance) => (
                   <SelectItem key={substance.id} value={substance.id}>
                     <div className="flex items-center gap-2">
-                      {substance.id.startsWith('user_') && <User className="h-3 w-3" />}
+                      {substance.id.startsWith('user_') && <User className="h-3 w-3 text-yellow-500" />}
                       <span>{substance.name} ({substance.formula})</span>
                     </div>
                   </SelectItem>
@@ -331,7 +332,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                 <div key={substance.id} className="flex items-center justify-between p-3 border rounded-lg">
                   <div>
                     <div className="flex items-center gap-2">
-                      {substance.id.startsWith('user_') && <User className="h-3 w-3" />}
+                      {substance.id.startsWith('user_') && <User className="h-3 w-3 text-yellow-500" />}
                       <span className="font-medium">{substance.name}</span>
                     </div>
                     <div className="text-sm text-gray-500">{substance.formula}</div>
@@ -386,7 +387,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
               <Label>Elementos</Label>
               {newSubstance.elements?.map((element, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <span className="text-sm">{element.symbol}: {element.percentage.toFixed(2)}%</span>
+                  <span className="text-sm">{element.symbol}: {element.percentage.toFixed(3)}%</span>
                   <Button
                     variant="outline"
                     size="sm"
@@ -415,9 +416,9 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                 </Select>
                 <Input
                   type="number"
-                  placeholder="% (ex: 15.5)"
+                  placeholder="% (ex: 15.5, 0.1, 0.05)"
                   value={newElement.percentage || ''}
-                  onChange={(e) => setNewElement(prev => ({ ...prev, percentage: parseFloat(e.target.value) || 0 }))}
+                  onChange={(e) => setNewElement(prev => ({ ...prev, percentage: parseFloat(e.target.value) || undefined }))}
                   className="flex-1"
                   min="0.001"
                   step="0.001"

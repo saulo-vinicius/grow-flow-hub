@@ -27,6 +27,22 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
     });
   };
 
+  const setVegetativePreset = () => {
+    onTargetsChange({
+      N: 200, P: 50, K: 180, Ca: 150, Mg: 50, S: 60,
+      Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
+      Si: 0, Na: 0, Cl: 0
+    });
+  };
+
+  const setFloweringPreset = () => {
+    onTargetsChange({
+      N: 150, P: 80, K: 300, Ca: 200, Mg: 60, S: 80,
+      Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
+      Si: 0, Na: 0, Cl: 0
+    });
+  };
+
   const macronutrients = [
     { key: 'N' as keyof NutrientTarget, label: 'Nitrogênio (N)', unit: 'ppm' },
     { key: 'P' as keyof NutrientTarget, label: 'Fósforo (P)', unit: 'ppm' },
@@ -53,10 +69,18 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Concentrações Alvo (ppm)</CardTitle>
-          <Button variant="outline" size="sm" onClick={resetTargets}>
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Zerar Valores
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={setVegetativePreset}>
+              Vegetativo
+            </Button>
+            <Button variant="outline" size="sm" onClick={setFloweringPreset}>
+              Floração
+            </Button>
+            <Button variant="outline" size="sm" onClick={resetTargets}>
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Zerar
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

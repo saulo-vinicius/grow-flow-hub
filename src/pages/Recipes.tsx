@@ -89,15 +89,7 @@ export function Recipes() {
     fetchRecipes();
   }, [user]);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">Carregando receitas...</div>
-      </div>
-    );
-  }
-
-  // Helper function to safely parse and render substances
+  // Helper function to safely parse and render substances with weights
   const renderSubstances = (substances: Json) => {
     try {
       const substanceArray = Array.isArray(substances) ? substances : [];
@@ -107,6 +99,11 @@ export function Recipes() {
             <div key={index} className="p-2 border rounded">
               <div className="font-medium">{substance.name || 'Nome não disponível'}</div>
               <div className="text-sm text-gray-500">{substance.formula || 'Fórmula não disponível'}</div>
+              {substance.weight && (
+                <div className="text-sm font-medium text-blue-600">
+                  Quantidade: {substance.weight.toFixed(3)}g
+                </div>
+              )}
               <div className="text-xs text-gray-400">
                 {substance.elements?.map((el: any) => `${el.symbol}: ${el.percentage}%`).join(', ') || 'Elementos não disponíveis'}
               </div>
@@ -121,17 +118,50 @@ export function Recipes() {
     }
   };
 
-  // Helper function to safely parse and render elements
+  // Helper function to safely parse and render elements in organized order
   const renderElements = (elements: Json) => {
     try {
       if (typeof elements === 'object' && elements !== null && !Array.isArray(elements)) {
+        // Define the order: macronutrients first, then micronutrients
+        const macronutrients = ['N', 'P', 'K', 'Ca', 'Mg', 'S'];
+        const micronutrients = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo', 'Si', 'Na', 'Cl'];
+        
+        const orderedElements = [
+          ...macronutrients.filter(element => elements[element] !== undefined),
+          ...micronutrients.filter(element => elements[element] !== undefined)
+        ];
+
         return (
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            {Object.entries(elements).map(([element, value]: [string, any]) => (
-              <div key={element}>
-                <span className="font-medium">{element}:</span> {value}
+          <div className="space-y-4">
+            {macronutrients.some(el => elements[el] !== undefined) && (
+              <div>
+                <h5 className="font-medium text-green-700 mb-2">Macronutrientes</h5>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  {macronutrients.map(element => 
+                    elements[element] !== undefined && (
+                      <div key={element}>
+                        <span className="font-medium">{element}:</span> {elements[element]} ppm
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            ))}
+            )}
+            
+            {micronutrients.some(el => elements[el] !== undefined) && (
+              <div>
+                <h5 className="font-medium text-blue-700 mb-2">Micronutrientes</h5>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  {micronutrients.map(element => 
+                    elements[element] !== undefined && (
+                      <div key={element}>
+                        <span className="font-medium">{element}:</span> {elements[element]} ppm
+                      </div>
+                    )
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         );
       }
@@ -214,17 +244,17 @@ export function Recipes() {
                           Ver Composição
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl">
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
                           <DialogTitle>Composição da Receita: {recipe.name}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>
-                            <h4 className="font-medium mb-2">Substâncias:</h4>
+                            <h4 className="font-medium mb-2">Substâncias e Quantidades:</h4>
                             {renderSubstances(recipe.substances)}
                           </div>
                           <div>
-                            <h4 className="font-medium mb-2">Concentrações Alvo (ppm):</h4>
+                            <h4 className="font-medium mb-2">Concentrações Alvo:</h4>
                             {renderElements(recipe.elements)}
                           </div>
                         </div>

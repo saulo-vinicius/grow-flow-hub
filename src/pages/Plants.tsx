@@ -3,8 +3,9 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, MapPin, Leaf, Calendar, Trash2 } from 'lucide-react';
+import { Plus, MapPin, Leaf, Calendar, Trash2, Edit } from 'lucide-react';
 import { CreatePlantDialog } from '@/components/plants/CreatePlantDialog';
+import { EditPlantDialog } from '@/components/plants/EditPlantDialog';
 import { PlantDetailsDialog } from '@/components/plants/PlantDetailsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -17,6 +18,8 @@ interface Plant {
   location: string;
   growth_phase: string;
   added_on: string;
+  cultivation_medium?: string;
+  soil_composition?: any;
 }
 
 export function Plants() {
@@ -73,6 +76,37 @@ export function Plants() {
     }
   };
 
+  const advancePhase = async (plant: Plant) => {
+    const phases = ['germinacao', 'plantula', 'vegetativa', 'pre-floracao', 'floracao', 'colheita'];
+    const currentIndex = phases.indexOf(plant.growth_phase);
+    
+    if (currentIndex < phases.length - 1) {
+      const nextPhase = phases[currentIndex + 1];
+      
+      try {
+        const { error } = await supabase
+          .from('plants')
+          .update({ growth_phase: nextPhase })
+          .eq('id', plant.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Fase avançada",
+          description: `Planta agora está na fase: ${getPhaseLabel(nextPhase)}`
+        });
+
+        fetchPlants();
+      } catch (error: any) {
+        toast({
+          title: "Erro",
+          description: "Erro ao avançar fase",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     fetchPlants();
   }, [user]);
@@ -82,8 +116,8 @@ export function Plants() {
       case 'germinacao': return 'bg-yellow-100 text-yellow-800';
       case 'plantula': return 'bg-green-100 text-green-800';
       case 'vegetativa': return 'bg-green-100 text-green-800';
+      case 'pre-floracao': return 'bg-orange-100 text-orange-800';
       case 'floracao': return 'bg-orange-100 text-orange-800';
-      case 'frutificacao': return 'bg-red-100 text-red-800';
       case 'colheita': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -94,8 +128,8 @@ export function Plants() {
       case 'germinacao': return 'Germinação';
       case 'plantula': return 'Plântula';
       case 'vegetativa': return 'Vegetativa';
+      case 'pre-floracao': return 'Pré-Floração';
       case 'floracao': return 'Floração';
-      case 'frutificacao': return 'Frutificação';
       case 'colheita': return 'Colheita';
       default: return phase;
     }
@@ -112,13 +146,16 @@ export function Plants() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t('plants.title')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t('plants.subtitle')}
-          </p>
+        <div className="flex items-center gap-3">
+          <Leaf className="h-8 w-8 text-green-600" />
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              {t('plants.title')}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {t('plants.subtitle')}
+            </p>
+          </div>
         </div>
         <CreatePlantDialog onPlantCreated={fetchPlants} />
       </div>
@@ -151,14 +188,17 @@ export function Plants() {
                       {plant.species || 'Espécie não informada'}
                     </CardDescription>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deletePlant(plant.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <EditPlantDialog plant={plant} onPlantUpdated={fetchPlants} />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deletePlant(plant.id)}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -167,6 +207,11 @@ export function Plants() {
                     <MapPin className="h-4 w-4" />
                     <span>{plant.location || 'Local não informado'}</span>
                   </div>
+                  {plant.cultivation_medium && (
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Cultivo:</span> {plant.cultivation_medium === 'hydroponic' ? 'Hidroponia' : 'Solo'}
+                    </div>
+                  )}
                   <div className="flex items-center gap-2">
                     <Leaf className="h-4 w-4" />
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPhaseColor(plant.growth_phase)}`}>
@@ -177,11 +222,21 @@ export function Plants() {
                     <Calendar className="h-4 w-4" />
                     <span>Adicionada em {new Date(plant.added_on).toLocaleDateString('pt-BR')}</span>
                   </div>
-                  <div className="pt-2">
+                  <div className="pt-2 space-y-2">
                     <PlantDetailsDialog 
                       plantId={plant.id}
                       plantName={plant.name}
                     />
+                    {plant.growth_phase !== 'colheita' && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => advancePhase(plant)}
+                        className="w-full"
+                      >
+                        Passar para próxima fase
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

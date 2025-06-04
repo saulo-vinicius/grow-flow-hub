@@ -5,28 +5,35 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-interface CreatePlantDialogProps {
-  onPlantCreated: () => void;
+interface Plant {
+  id: string;
+  name: string;
+  species: string;
+  location: string;
+  growth_phase: string;
+  cultivation_medium?: string;
+  soil_composition?: any;
 }
 
-export function CreatePlantDialog({ onPlantCreated }: CreatePlantDialogProps) {
+interface EditPlantDialogProps {
+  plant: Plant;
+  onPlantUpdated: () => void;
+}
+
+export function EditPlantDialog({ plant, onPlantUpdated }: EditPlantDialogProps) {
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState('');
-  const [species, setSpecies] = useState('');
-  const [location, setLocation] = useState('');
-  const [growthPhase, setGrowthPhase] = useState('germinacao');
-  const [cultivationMedium, setCultivationMedium] = useState('soil');
-  const [soilComposition, setSoilComposition] = useState({
-    sand: 0,
-    clay: 0,
-    silt: 0,
-    organic: 0
-  });
+  const [name, setName] = useState(plant.name);
+  const [species, setSpecies] = useState(plant.species || '');
+  const [location, setLocation] = useState(plant.location || '');
+  const [cultivationMedium, setCultivationMedium] = useState(plant.cultivation_medium || 'soil');
+  const [soilComposition, setSoilComposition] = useState(
+    plant.soil_composition || { sand: 0, clay: 0, silt: 0, organic: 0 }
+  );
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -50,40 +57,33 @@ export function CreatePlantDialog({ onPlantCreated }: CreatePlantDialogProps) {
 
     setLoading(true);
     try {
-      const plantData: any = {
+      const updateData: any = {
         name,
         species,
         location,
-        growth_phase: growthPhase,
-        user_id: user.id,
-        stats: {},
-        applied_recipes: [],
-        cultivation_medium: cultivationMedium
+        cultivation_medium: cultivationMedium,
       };
 
       if (cultivationMedium === 'soil') {
-        plantData.soil_composition = soilComposition;
+        updateData.soil_composition = soilComposition;
+      } else {
+        updateData.soil_composition = null;
       }
 
       const { error } = await supabase
         .from('plants')
-        .insert(plantData);
+        .update(updateData)
+        .eq('id', plant.id);
 
       if (error) throw error;
 
       toast({
-        title: "Planta adicionada!",
-        description: "Nova planta registrada com sucesso."
+        title: "Planta atualizada!",
+        description: "Informações da planta atualizadas com sucesso."
       });
 
-      setName('');
-      setSpecies('');
-      setLocation('');
-      setGrowthPhase('germinacao');
-      setCultivationMedium('soil');
-      setSoilComposition({ sand: 0, clay: 0, silt: 0, organic: 0 });
       setOpen(false);
-      onPlantCreated();
+      onPlantUpdated();
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -107,62 +107,42 @@ export function CreatePlantDialog({ onPlantCreated }: CreatePlantDialogProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          Adicionar Planta
+        <Button variant="ghost" size="sm">
+          <Edit className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Adicionar Nova Planta</DialogTitle>
+          <DialogTitle>Editar Planta</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="name">Nome da Planta</Label>
+            <Label htmlFor="edit-name">Nome da Planta</Label>
             <Input
-              id="name"
+              id="edit-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Tomate Cherry"
               required
             />
           </div>
           <div>
-            <Label htmlFor="species">Espécie</Label>
+            <Label htmlFor="edit-species">Espécie</Label>
             <Input
-              id="species"
+              id="edit-species"
               value={species}
               onChange={(e) => setSpecies(e.target.value)}
-              placeholder="Ex: Solanum lycopersicum"
             />
           </div>
           <div>
-            <Label htmlFor="location">Localização</Label>
+            <Label htmlFor="edit-location">Localização</Label>
             <Input
-              id="location"
+              id="edit-location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              placeholder="Ex: Estufa 1, Bancada A"
             />
           </div>
           <div>
-            <Label htmlFor="growth-phase">Fase de Crescimento</Label>
-            <Select value={growthPhase} onValueChange={setGrowthPhase}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="germinacao">Germinação</SelectItem>
-                <SelectItem value="plantula">Plântula</SelectItem>
-                <SelectItem value="vegetativa">Vegetativa</SelectItem>
-                <SelectItem value="pre-floracao">Pré-Floração</SelectItem>
-                <SelectItem value="floracao">Floração</SelectItem>
-                <SelectItem value="colheita">Colheita</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="cultivation-medium">Meio de Cultivo</Label>
+            <Label htmlFor="edit-cultivation-medium">Meio de Cultivo</Label>
             <Select value={cultivationMedium} onValueChange={setCultivationMedium}>
               <SelectTrigger>
                 <SelectValue />
@@ -231,7 +211,7 @@ export function CreatePlantDialog({ onPlantCreated }: CreatePlantDialogProps) {
 
           <div className="flex gap-2">
             <Button type="submit" disabled={loading}>
-              {loading ? 'Adicionando...' : 'Adicionar Planta'}
+              {loading ? 'Salvando...' : 'Salvar Alterações'}
             </Button>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
