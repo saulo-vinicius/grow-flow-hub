@@ -140,7 +140,7 @@ export function Recipes() {
                   {macronutrients.map(element => 
                     elements[element] !== undefined && (
                       <div key={element}>
-                        <span className="font-medium">{element}:</span> {elements[element]} ppm
+                        <span className="font-medium">{element}:</span> {String(elements[element])} ppm
                       </div>
                     )
                   )}
@@ -155,7 +155,7 @@ export function Recipes() {
                   {micronutrients.map(element => 
                     elements[element] !== undefined && (
                       <div key={element}>
-                        <span className="font-medium">{element}:</span> {elements[element]} ppm
+                        <span className="font-medium">{element}:</span> {String(elements[element])} ppm
                       </div>
                     )
                   )}
