@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Beaker, Trash2, Flask, Eye } from 'lucide-react';
+import { Plus, Calendar, Beaker, Trash2, TestTube, Eye } from 'lucide-react';
 import { CreateRecipeDialog } from '@/components/recipes/CreateRecipeDialog';
 import { ApplyRecipeDialog } from '@/components/recipes/ApplyRecipeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Json } from '@/integrations/supabase/types';
 
 interface Recipe {
   id: string;
@@ -18,8 +19,8 @@ interface Recipe {
   solution_volume: number;
   volume_unit: string;
   created_at: string;
-  substances: any[];
-  elements: any;
+  substances: Json;
+  elements: Json;
 }
 
 export function Recipes() {
@@ -40,7 +41,15 @@ export function Recipes() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setRecipes(data || []);
+      
+      // Safely cast the data to match our Recipe interface
+      const typedData: Recipe[] = (data || []).map(recipe => ({
+        ...recipe,
+        substances: recipe.substances || [],
+        elements: recipe.elements || {}
+      }));
+      
+      setRecipes(typedData);
     } catch (error: any) {
       toast({
         title: "Erro",
@@ -88,11 +97,55 @@ export function Recipes() {
     );
   }
 
+  // Helper function to safely parse and render substances
+  const renderSubstances = (substances: Json) => {
+    try {
+      const substanceArray = Array.isArray(substances) ? substances : [];
+      return substanceArray.length > 0 ? (
+        <div className="space-y-2">
+          {substanceArray.map((substance: any, index: number) => (
+            <div key={index} className="p-2 border rounded">
+              <div className="font-medium">{substance.name || 'Nome não disponível'}</div>
+              <div className="text-sm text-gray-500">{substance.formula || 'Fórmula não disponível'}</div>
+              <div className="text-xs text-gray-400">
+                {substance.elements?.map((el: any) => `${el.symbol}: ${el.percentage}%`).join(', ') || 'Elementos não disponíveis'}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-gray-500">Nenhuma substância registrada</p>
+      );
+    } catch {
+      return <p className="text-gray-500">Erro ao carregar substâncias</p>;
+    }
+  };
+
+  // Helper function to safely parse and render elements
+  const renderElements = (elements: Json) => {
+    try {
+      if (typeof elements === 'object' && elements !== null && !Array.isArray(elements)) {
+        return (
+          <div className="grid grid-cols-3 gap-2 text-sm">
+            {Object.entries(elements).map(([element, value]: [string, any]) => (
+              <div key={element}>
+                <span className="font-medium">{element}:</span> {value}
+              </div>
+            ))}
+          </div>
+        );
+      }
+      return <p className="text-gray-500">Nenhuma concentração definida</p>;
+    } catch {
+      return <p className="text-gray-500">Erro ao carregar concentrações</p>;
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <Flask className="h-8 w-8 text-blue-600" />
+          <TestTube className="h-8 w-8 text-blue-600" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               {t('recipes.title')}
@@ -168,35 +221,11 @@ export function Recipes() {
                         <div className="space-y-4">
                           <div>
                             <h4 className="font-medium mb-2">Substâncias:</h4>
-                            {recipe.substances && recipe.substances.length > 0 ? (
-                              <div className="space-y-2">
-                                {recipe.substances.map((substance: any, index: number) => (
-                                  <div key={index} className="p-2 border rounded">
-                                    <div className="font-medium">{substance.name}</div>
-                                    <div className="text-sm text-gray-500">{substance.formula}</div>
-                                    <div className="text-xs text-gray-400">
-                                      {substance.elements?.map((el: any) => `${el.symbol}: ${el.percentage}%`).join(', ')}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-gray-500">Nenhuma substância registrada</p>
-                            )}
+                            {renderSubstances(recipe.substances)}
                           </div>
                           <div>
                             <h4 className="font-medium mb-2">Concentrações Alvo (ppm):</h4>
-                            {recipe.elements ? (
-                              <div className="grid grid-cols-3 gap-2 text-sm">
-                                {Object.entries(recipe.elements).map(([element, value]: [string, any]) => (
-                                  <div key={element}>
-                                    <span className="font-medium">{element}:</span> {value}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <p className="text-gray-500">Nenhuma concentração definida</p>
-                            )}
+                            {renderElements(recipe.elements)}
                           </div>
                         </div>
                       </DialogContent>
