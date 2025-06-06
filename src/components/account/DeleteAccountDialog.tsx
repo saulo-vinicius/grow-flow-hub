@@ -58,8 +58,8 @@ export function DeleteAccountDialog() {
         await supabase.from('subscribers').delete().eq('user_id', user.id);
       }
 
-      // Delete the auth user (this will trigger the cascade)
-      const { error } = await supabase.rpc('delete_user');
+      // Delete the auth user using the admin API
+      const { error } = await supabase.auth.admin.deleteUser(user?.id || '');
       
       if (error) throw error;
 

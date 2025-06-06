@@ -1,5 +1,4 @@
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -27,22 +26,6 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
     });
   };
 
-  const setVegetativePreset = () => {
-    onTargetsChange({
-      N: 200, P: 50, K: 180, Ca: 150, Mg: 50, S: 60,
-      Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
-      Si: 0, Na: 0, Cl: 0
-    });
-  };
-
-  const setFloweringPreset = () => {
-    onTargetsChange({
-      N: 150, P: 80, K: 300, Ca: 200, Mg: 60, S: 80,
-      Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
-      Si: 0, Na: 0, Cl: 0
-    });
-  };
-
   const macronutrients = [
     { key: 'N' as keyof NutrientTarget, label: 'Nitrogênio (N)', unit: 'ppm' },
     { key: 'P' as keyof NutrientTarget, label: 'Fósforo (P)', unit: 'ppm' },
@@ -65,65 +48,53 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
   ];
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Concentrações Alvo (ppm)</CardTitle>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={setVegetativePreset}>
-              Vegetativo
-            </Button>
-            <Button variant="outline" size="sm" onClick={setFloweringPreset}>
-              Floração
-            </Button>
-            <Button variant="outline" size="sm" onClick={resetTargets}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Zerar
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <h4 className="font-medium mb-3 text-green-700">Macronutrientes</h4>
-          <div className="grid grid-cols-2 gap-4">
-            {macronutrients.map(({ key, label }) => (
-              <div key={key}>
-                <Label htmlFor={key} className="text-sm">{label}</Label>
-                <Input
-                  id={key}
-                  type="number"
-                  value={targets[key]}
-                  onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
-                  className="mt-1"
-                  min="0"
-                  step="0.1"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <Button variant="outline" size="sm" onClick={resetTargets}>
+          <RotateCcw className="h-4 w-4 mr-2" />
+          Zerar
+        </Button>
+      </div>
 
-        <div>
-          <h4 className="font-medium mb-3 text-blue-700">Micronutrientes</h4>
-          <div className="grid grid-cols-2 gap-4">
-            {micronutrients.map(({ key, label }) => (
-              <div key={key}>
-                <Label htmlFor={key} className="text-sm">{label}</Label>
-                <Input
-                  id={key}
-                  type="number"
-                  value={targets[key]}
-                  onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
-                  className="mt-1"
-                  min="0"
-                  step="0.001"
-                />
-              </div>
-            ))}
-          </div>
+      <div>
+        <h4 className="font-medium mb-3 text-green-700">Macronutrientes</h4>
+        <div className="grid grid-cols-2 gap-4">
+          {macronutrients.map(({ key, label }) => (
+            <div key={key}>
+              <Label htmlFor={key} className="text-sm">{label}</Label>
+              <Input
+                id={key}
+                type="number"
+                value={targets[key]}
+                onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
+                className="mt-1"
+                min="0"
+                step="0.1"
+              />
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      <div>
+        <h4 className="font-medium mb-3 text-blue-700">Micronutrientes</h4>
+        <div className="grid grid-cols-2 gap-4">
+          {micronutrients.map(({ key, label }) => (
+            <div key={key}>
+              <Label htmlFor={key} className="text-sm">{label}</Label>
+              <Input
+                id={key}
+                type="number"
+                value={targets[key]}
+                onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
+                className="mt-1"
+                min="0"
+                step="0.001"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

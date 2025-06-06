@@ -15,6 +15,7 @@ import { Calculator } from 'lucide-react';
 
 export function BoraGrowCalculator() {
   const [substances, setSubstances] = useState<Substance[]>([]);
+  const [activePreset, setActivePreset] = useState<'vegetative' | 'flowering' | null>('vegetative');
 
   const [targets, setTargets] = useState<NutrientTarget>({
     N: 200, P: 50, K: 300, Ca: 200, Mg: 50, S: 100,
@@ -32,6 +33,7 @@ export function BoraGrowCalculator() {
       Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
       Si: 0, Na: 0, Cl: 0
     });
+    setActivePreset('vegetative');
   };
 
   const setFloweringTargets = () => {
@@ -40,6 +42,7 @@ export function BoraGrowCalculator() {
       Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
       Si: 0, Na: 0, Cl: 0
     });
+    setActivePreset('flowering');
   };
 
   const handleCalculate = () => {
@@ -114,18 +117,28 @@ export function BoraGrowCalculator() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Concentrações Alvo (ppm)</CardTitle>
-              <div className="flex gap-2 mt-4">
+              <CardTitle className="mb-4">Concentrações Alvo (ppm)</CardTitle>
+              <div className="flex gap-2">
                 <Button 
                   onClick={setVegetativeTargets}
-                  className="bg-green-500 hover:bg-green-600 text-white"
+                  className={`${
+                    activePreset === 'vegetative' 
+                      ? 'bg-green-500 hover:bg-green-600 text-white' 
+                      : 'text-green-500 border-green-500 hover:bg-green-50 dark:hover:bg-green-950'
+                  }`}
+                  variant={activePreset === 'vegetative' ? 'default' : 'outline'}
                   size="sm"
                 >
                   Vegetativo
                 </Button>
                 <Button 
                   onClick={setFloweringTargets}
-                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  className={`${
+                    activePreset === 'flowering' 
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                      : 'text-purple-600 border-purple-600 hover:bg-purple-50 dark:hover:bg-purple-950'
+                  }`}
+                  variant={activePreset === 'flowering' ? 'default' : 'outline'}
                   size="sm"
                 >
                   Floração
@@ -133,7 +146,13 @@ export function BoraGrowCalculator() {
               </div>
             </CardHeader>
             <CardContent>
-              <NutrientTargets targets={targets} onTargetsChange={setTargets} />
+              <NutrientTargets 
+                targets={targets} 
+                onTargetsChange={(newTargets) => {
+                  setTargets(newTargets);
+                  setActivePreset(null); // Reset active preset when manually changing values
+                }} 
+              />
             </CardContent>
           </Card>
         </div>

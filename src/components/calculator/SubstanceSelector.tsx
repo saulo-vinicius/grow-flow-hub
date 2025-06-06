@@ -43,6 +43,9 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     percentage: undefined
   });
 
+  // State for percentage input as string to handle "0.X" format
+  const [percentageInputValue, setPercentageInputValue] = useState('');
+
   useEffect(() => {
     fetchSubstances();
   }, []);
@@ -133,7 +136,8 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       return;
     }
 
-    if (newElement.percentage === undefined || newElement.percentage <= 0) {
+    const percentage = parseFloat(percentageInputValue);
+    if (isNaN(percentage) || percentage <= 0) {
       toast({
         title: "Valor inválido",
         description: "O valor do elemento deve ser maior que 0%",
@@ -142,7 +146,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       return;
     }
 
-    const convertedElement = convertElement(newElement.symbol, newElement.percentage);
+    const convertedElement = convertElement(newElement.symbol, percentage);
     
     setNewSubstance(prev => {
       const existingElements = prev.elements || [];
@@ -159,6 +163,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     });
     
     setNewElement({ symbol: '', percentage: undefined });
+    setPercentageInputValue('');
   };
 
   const removeElement = (index: number) => {
@@ -415,13 +420,18 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                   </SelectContent>
                 </Select>
                 <Input
-                  type="number"
+                  type="text"
                   placeholder="% (ex: 15.5, 0.1, 0.05)"
-                  value={newElement.percentage || ''}
-                  onChange={(e) => setNewElement(prev => ({ ...prev, percentage: parseFloat(e.target.value) || undefined }))}
+                  value={percentageInputValue}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Allow only numbers, one decimal point, and leading zeros
+                    if (/^\d*\.?\d*$/.test(value)) {
+                      setPercentageInputValue(value);
+                      setNewElement(prev => ({ ...prev, percentage: parseFloat(value) || undefined }));
+                    }
+                  }}
                   className="flex-1"
-                  min="0.001"
-                  step="0.001"
                 />
                 <Button onClick={addElement} size="sm">
                   <Plus className="h-4 w-4" />
