@@ -127,12 +127,14 @@ export type Database = {
         Row: {
           added_on: string | null
           applied_recipes: Json | null
+          cultivation_medium: string | null
           growth_phase: string | null
           id: string
           image_url: string | null
           last_updated: string | null
           location: string | null
           name: string
+          soil_composition: Json | null
           species: string | null
           stats: Json | null
           user_id: string
@@ -140,12 +142,14 @@ export type Database = {
         Insert: {
           added_on?: string | null
           applied_recipes?: Json | null
+          cultivation_medium?: string | null
           growth_phase?: string | null
           id?: string
           image_url?: string | null
           last_updated?: string | null
           location?: string | null
           name: string
+          soil_composition?: Json | null
           species?: string | null
           stats?: Json | null
           user_id: string
@@ -153,15 +157,98 @@ export type Database = {
         Update: {
           added_on?: string | null
           applied_recipes?: Json | null
+          cultivation_medium?: string | null
           growth_phase?: string | null
           id?: string
           image_url?: string | null
           last_updated?: string | null
           location?: string | null
           name?: string
+          soil_composition?: Json | null
           species?: string | null
           stats?: Json | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          stripe_customer_id: string | null
+          subscribed: boolean
+          subscription_end: string | null
+          subscription_tier: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          stripe_customer_id?: string | null
+          subscribed?: boolean
+          subscription_end?: string | null
+          subscription_tier?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          subject?: string
+          user_id?: string | null
         }
         Relationships: []
       }

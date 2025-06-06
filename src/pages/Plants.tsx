@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, MapPin, Leaf, Calendar, Trash2, Edit } from 'lucide-react';
+import { Plus, MapPin, Leaf, Calendar, Trash2, Edit, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CreatePlantDialog } from '@/components/plants/CreatePlantDialog';
 import { EditPlantDialog } from '@/components/plants/EditPlantDialog';
 import { PlantDetailsDialog } from '@/components/plants/PlantDetailsDialog';
@@ -107,19 +106,50 @@ export function Plants() {
     }
   };
 
+  const previousPhase = async (plant: Plant) => {
+    const phases = ['germinacao', 'plantula', 'vegetativa', 'pre-floracao', 'floracao', 'colheita'];
+    const currentIndex = phases.indexOf(plant.growth_phase);
+    
+    if (currentIndex > 0) {
+      const prevPhase = phases[currentIndex - 1];
+      
+      try {
+        const { error } = await supabase
+          .from('plants')
+          .update({ growth_phase: prevPhase })
+          .eq('id', plant.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Fase retrocedida",
+          description: `Planta agora está na fase: ${getPhaseLabel(prevPhase)}`
+        });
+
+        fetchPlants();
+      } catch (error: any) {
+        toast({
+          title: "Erro",
+          description: "Erro ao retroceder fase",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     fetchPlants();
   }, [user]);
 
   const getPhaseColor = (phase: string) => {
     switch (phase) {
-      case 'germinacao': return 'bg-yellow-100 text-yellow-800';
-      case 'plantula': return 'bg-green-100 text-green-800';
-      case 'vegetativa': return 'bg-green-100 text-green-800';
-      case 'pre-floracao': return 'bg-orange-100 text-orange-800';
-      case 'floracao': return 'bg-orange-100 text-orange-800';
-      case 'colheita': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'germinacao': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+      case 'plantula': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'vegetativa': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      case 'pre-floracao': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'floracao': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'colheita': return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
     }
   };
 
@@ -133,6 +163,13 @@ export function Plants() {
       case 'colheita': return 'Colheita';
       default: return phase;
     }
+  };
+
+  const getCultivationMediumDisplay = (plant: Plant) => {
+    if (plant.cultivation_medium === 'soil' && plant.soil_composition?.custom_soil) {
+      return `Solo: ${plant.soil_composition.custom_soil}`;
+    }
+    return plant.cultivation_medium === 'hydroponic' ? 'Hidroponia' : 'Solo';
   };
 
   if (loading) {
@@ -203,22 +240,20 @@ export function Plants() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <MapPin className="h-4 w-4" />
                     <span>{plant.location || 'Local não informado'}</span>
                   </div>
-                  {plant.cultivation_medium && (
-                    <div className="text-sm text-gray-600">
-                      <span className="font-medium">Cultivo:</span> {plant.cultivation_medium === 'hydroponic' ? 'Hidroponia' : 'Solo'}
-                    </div>
-                  )}
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Cultivo:</span> {getCultivationMediumDisplay(plant)}
+                  </div>
                   <div className="flex items-center gap-2">
                     <Leaf className="h-4 w-4" />
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPhaseColor(plant.growth_phase)}`}>
                       {getPhaseLabel(plant.growth_phase)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Calendar className="h-4 w-4" />
                     <span>Adicionada em {new Date(plant.added_on).toLocaleDateString('pt-BR')}</span>
                   </div>
@@ -227,16 +262,30 @@ export function Plants() {
                       plantId={plant.id}
                       plantName={plant.name}
                     />
-                    {plant.growth_phase !== 'colheita' && (
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => advancePhase(plant)}
-                        className="w-full"
-                      >
-                        Passar para próxima fase
-                      </Button>
-                    )}
+                    <div className="flex gap-2">
+                      {plant.growth_phase !== 'germinacao' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => previousPhase(plant)}
+                          className="flex-1 flex items-center gap-1"
+                        >
+                          <ChevronLeft className="h-3 w-3" />
+                          Fase Anterior
+                        </Button>
+                      )}
+                      {plant.growth_phase !== 'colheita' && (
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => advancePhase(plant)}
+                          className="flex-1 flex items-center gap-1"
+                        >
+                          Próxima Fase
+                          <ChevronRight className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

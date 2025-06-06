@@ -26,6 +26,22 @@ export function BoraGrowCalculator() {
   const [volumeUnit, setVolumeUnit] = useState('mL');
   const [result, setResult] = useState<CalculationResult | null>(null);
 
+  const setVegetativeTargets = () => {
+    setTargets({
+      N: 200, P: 50, K: 250, Ca: 200, Mg: 50, S: 100,
+      Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
+      Si: 0, Na: 0, Cl: 0
+    });
+  };
+
+  const setFloweringTargets = () => {
+    setTargets({
+      N: 150, P: 70, K: 350, Ca: 180, Mg: 60, S: 120,
+      Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
+      Si: 0, Na: 0, Cl: 0
+    });
+  };
+
   const handleCalculate = () => {
     if (substances.length === 0) {
       alert('Adicione pelo menos uma substância para calcular.');
@@ -42,9 +58,9 @@ export function BoraGrowCalculator() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <Calculator className="h-8 w-8 text-green-600" />
-          <h1 className="text-3xl font-bold text-gray-900">BoraGrow Calculator</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">BoraGrow Calculator</h1>
         </div>
-        <p className="text-gray-600">
+        <p className="text-gray-600 dark:text-gray-400">
           Calculadora avançada para formulação de soluções nutritivas hidropônicas
         </p>
       </div>
@@ -96,7 +112,30 @@ export function BoraGrowCalculator() {
             </CardContent>
           </Card>
 
-          <NutrientTargets targets={targets} onTargetsChange={setTargets} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Concentrações Alvo (ppm)</CardTitle>
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  onClick={setVegetativeTargets}
+                  className="bg-green-500 hover:bg-green-600 text-white"
+                  size="sm"
+                >
+                  Vegetativo
+                </Button>
+                <Button 
+                  onClick={setFloweringTargets}
+                  className="bg-purple-600 hover:bg-purple-700 text-white"
+                  size="sm"
+                >
+                  Floração
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <NutrientTargets targets={targets} onTargetsChange={setTargets} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Substâncias e Resultados */}

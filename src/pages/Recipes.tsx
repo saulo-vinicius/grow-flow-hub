@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,25 +95,29 @@ export function Recipes() {
       return substanceArray.length > 0 ? (
         <div className="space-y-2">
           {substanceArray.map((substance: any, index: number) => (
-            <div key={index} className="p-2 border rounded">
-              <div className="font-medium">{substance.name || 'Nome não disponível'}</div>
-              <div className="text-sm text-gray-500">{substance.formula || 'Fórmula não disponível'}</div>
+            <div key={index} className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
+              <div className="font-medium text-gray-900 dark:text-gray-100">
+                {substance.name || 'Nome não disponível'}
+              </div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                {substance.formula || 'Fórmula não disponível'}
+              </div>
               {substance.weight && (
-                <div className="text-sm font-medium text-blue-600">
+                <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
                   Quantidade: {substance.weight.toFixed(3)}g
                 </div>
               )}
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                 {substance.elements?.map((el: any) => `${el.symbol}: ${el.percentage}%`).join(', ') || 'Elementos não disponíveis'}
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-gray-500">Nenhuma substância registrada</p>
+        <p className="text-gray-500 dark:text-gray-400">Nenhuma substância registrada</p>
       );
     } catch {
-      return <p className="text-gray-500">Erro ao carregar substâncias</p>;
+      return <p className="text-gray-500 dark:text-gray-400">Erro ao carregar substâncias</p>;
     }
   };
 
@@ -125,21 +128,16 @@ export function Recipes() {
         // Define the order: macronutrients first, then micronutrients
         const macronutrients = ['N', 'P', 'K', 'Ca', 'Mg', 'S'];
         const micronutrients = ['Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo', 'Si', 'Na', 'Cl'];
-        
-        const orderedElements = [
-          ...macronutrients.filter(element => elements[element] !== undefined),
-          ...micronutrients.filter(element => elements[element] !== undefined)
-        ];
 
         return (
           <div className="space-y-4">
             {macronutrients.some(el => elements[el] !== undefined) && (
               <div>
-                <h5 className="font-medium text-green-700 mb-2">Macronutrientes</h5>
+                <h5 className="font-medium text-green-700 dark:text-green-400 mb-2">Macronutrientes</h5>
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   {macronutrients.map(element => 
                     elements[element] !== undefined && (
-                      <div key={element}>
+                      <div key={element} className="text-gray-700 dark:text-gray-300">
                         <span className="font-medium">{element}:</span> {String(elements[element])} ppm
                       </div>
                     )
@@ -150,11 +148,11 @@ export function Recipes() {
             
             {micronutrients.some(el => elements[el] !== undefined) && (
               <div>
-                <h5 className="font-medium text-blue-700 mb-2">Micronutrientes</h5>
+                <h5 className="font-medium text-blue-700 dark:text-blue-400 mb-2">Micronutrientes</h5>
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   {micronutrients.map(element => 
                     elements[element] !== undefined && (
-                      <div key={element}>
+                      <div key={element} className="text-gray-700 dark:text-gray-300">
                         <span className="font-medium">{element}:</span> {String(elements[element])} ppm
                       </div>
                     )
@@ -165,9 +163,9 @@ export function Recipes() {
           </div>
         );
       }
-      return <p className="text-gray-500">Nenhuma concentração definida</p>;
+      return <p className="text-gray-500 dark:text-gray-400">Nenhuma concentração definida</p>;
     } catch {
-      return <p className="text-gray-500">Erro ao carregar concentrações</p>;
+      return <p className="text-gray-500 dark:text-gray-400">Erro ao carregar concentrações</p>;
     }
   };
 
@@ -228,11 +226,11 @@ export function Recipes() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Beaker className="h-4 w-4" />
                     <span>{recipe.solution_volume} {recipe.volume_unit}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <Calendar className="h-4 w-4" />
                     <span>{new Date(recipe.created_at).toLocaleDateString('pt-BR')}</span>
                   </div>
@@ -250,11 +248,15 @@ export function Recipes() {
                         </DialogHeader>
                         <div className="space-y-4">
                           <div>
-                            <h4 className="font-medium mb-2">Substâncias e Quantidades:</h4>
+                            <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">
+                              Substâncias e Quantidades:
+                            </h4>
                             {renderSubstances(recipe.substances)}
                           </div>
                           <div>
-                            <h4 className="font-medium mb-2">Concentrações Alvo:</h4>
+                            <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">
+                              Concentrações Alvo:
+                            </h4>
                             {renderElements(recipe.elements)}
                           </div>
                         </div>
