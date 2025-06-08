@@ -6,6 +6,7 @@ import { Plus, MapPin, Leaf, Calendar, Trash2, Edit, ChevronLeft, ChevronRight }
 import { CreatePlantDialog } from '@/components/plants/CreatePlantDialog';
 import { EditPlantDialog } from '@/components/plants/EditPlantDialog';
 import { PlantDetailsDialog } from '@/components/plants/PlantDetailsDialog';
+import { PhaseFilter } from '@/components/plants/PhaseFilter';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +25,8 @@ interface Plant {
 export function Plants() {
   const { t } = useTranslation();
   const [plants, setPlants] = useState<Plant[]>([]);
+  const [filteredPlants, setFilteredPlants] = useState<Plant[]>([]);
+  const [selectedPhase, setSelectedPhase] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -50,6 +53,21 @@ export function Plants() {
       setLoading(false);
     }
   };
+
+  // Filter plants based on selected phase
+  useEffect(() => {
+    if (selectedPhase === null) {
+      setFilteredPlants(plants);
+    } else {
+      setFilteredPlants(plants.filter(plant => plant.growth_phase === selectedPhase));
+    }
+  }, [plants, selectedPhase]);
+
+  // Calculate plant counts by phase
+  const plantCounts = plants.reduce((counts, plant) => {
+    counts[plant.growth_phase] = (counts[plant.growth_phase] || 0) + 1;
+    return counts;
+  }, {} as { [key: string]: number });
 
   const deletePlant = async (id: string) => {
     try {
@@ -197,6 +215,14 @@ export function Plants() {
         <CreatePlantDialog onPlantCreated={fetchPlants} />
       </div>
 
+      {plants.length > 0 && (
+        <PhaseFilter
+          selectedPhase={selectedPhase}
+          onPhaseChange={setSelectedPhase}
+          plantCounts={plantCounts}
+        />
+      )}
+
       {plants.length === 0 ? (
         <Card>
           <CardHeader>
@@ -214,84 +240,100 @@ export function Plants() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plants.map((plant) => (
-            <Card key={plant.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{plant.name}</CardTitle>
-                    <CardDescription className="mt-2">
-                      {plant.species || 'Espécie não informada'}
-                    </CardDescription>
-                  </div>
-                  <div className="flex gap-1">
-                    <EditPlantDialog plant={plant} onPlantUpdated={fetchPlants} />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deletePlant(plant.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <MapPin className="h-4 w-4" />
-                    <span>{plant.location || 'Local não informado'}</span>
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <span className="font-medium">Cultivo:</span> {getCultivationMediumDisplay(plant)}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Leaf className="h-4 w-4" />
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPhaseColor(plant.growth_phase)}`}>
-                      {getPhaseLabel(plant.growth_phase)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Calendar className="h-4 w-4" />
-                    <span>Adicionada em {new Date(plant.added_on).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                  <div className="pt-2 space-y-2">
-                    <PlantDetailsDialog 
-                      plantId={plant.id}
-                      plantName={plant.name}
-                    />
-                    <div className="flex gap-2">
-                      {plant.growth_phase !== 'germinacao' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => previousPhase(plant)}
-                          className="flex-1 flex items-center gap-1"
-                        >
-                          <ChevronLeft className="h-3 w-3" />
-                          Fase Anterior
-                        </Button>
-                      )}
-                      {plant.growth_phase !== 'colheita' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => advancePhase(plant)}
-                          className="flex-1 flex items-center gap-1"
-                        >
-                          Próxima Fase
-                          <ChevronRight className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
+        <>
+          {filteredPlants.length === 0 && selectedPhase && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+                  <Leaf className="h-12 w-12 mx-auto mb-4" />
+                  <p className="text-lg font-medium mb-2">
+                    Nenhuma planta na fase "{getPhaseLabel(selectedPhase)}"
+                  </p>
+                  <p>Altere o filtro para ver todas as suas plantas.</p>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )}
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPlants.map((plant) => (
+              <Card key={plant.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <CardTitle className="text-lg">{plant.name}</CardTitle>
+                      <CardDescription className="mt-2">
+                        {plant.species || 'Espécie não informada'}
+                      </CardDescription>
+                    </div>
+                    <div className="flex gap-1">
+                      <EditPlantDialog plant={plant} onPlantUpdated={fetchPlants} />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deletePlant(plant.id)}
+                        className="text-red-500 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <MapPin className="h-4 w-4" />
+                      <span>{plant.location || 'Local não informado'}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <span className="font-medium">Cultivo:</span> {getCultivationMediumDisplay(plant)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Leaf className="h-4 w-4" />
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getPhaseColor(plant.growth_phase)}`}>
+                        {getPhaseLabel(plant.growth_phase)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <Calendar className="h-4 w-4" />
+                      <span>Adicionada em {new Date(plant.added_on).toLocaleDateString('pt-BR')}</span>
+                    </div>
+                    <div className="pt-2 space-y-2">
+                      <PlantDetailsDialog 
+                        plantId={plant.id}
+                        plantName={plant.name}
+                      />
+                      <div className="flex gap-2">
+                        {plant.growth_phase !== 'germinacao' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => previousPhase(plant)}
+                            className="flex-1 flex items-center gap-1"
+                          >
+                            <ChevronLeft className="h-3 w-3" />
+                            Fase Anterior
+                          </Button>
+                        )}
+                        {plant.growth_phase !== 'colheita' && (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => advancePhase(plant)}
+                            className="flex-1 flex items-center gap-1"
+                          >
+                            Próxima Fase
+                            <ChevronRight className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

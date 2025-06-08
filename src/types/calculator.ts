@@ -2,7 +2,7 @@
 export interface Element {
   symbol: string;
   percentage: number;
-  ppm?: number;
+  ppm: number;
 }
 
 export interface Substance {
@@ -10,29 +10,6 @@ export interface Substance {
   name: string;
   formula: string;
   elements: Element[];
-  weight?: number;
-}
-
-export interface Recipe {
-  id: string;
-  name: string;
-  description?: string;
-  substances: Substance[];
-  targetElements: Element[];
-  solutionVolume: number;
-  volumeUnit: string;
-  ecValue?: number;
-  phValue?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export interface CalculationResult {
-  substanceWeights: { [substanceId: string]: number };
-  totalWeight: number;
-  achievedElements: Element[];
-  deviation: number;
-  predictedEC?: number;
 }
 
 export interface NutrientTarget {
@@ -51,4 +28,12 @@ export interface NutrientTarget {
   Si: number;
   Na: number;
   Cl: number;
+}
+
+export interface CalculationResult {
+  substanceWeights: { [substanceId: string]: number };
+  totalWeight: number;
+  achievedElements: Element[];
+  deviation: number;
+  ecValue?: number;
 }

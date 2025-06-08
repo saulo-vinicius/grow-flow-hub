@@ -1,9 +1,9 @@
+
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Calendar, Beaker, Trash2, TestTube, Eye } from 'lucide-react';
-import { CreateRecipeDialog } from '@/components/recipes/CreateRecipeDialog';
+import { Calendar, Beaker, Trash2, TestTube, Eye } from 'lucide-react';
 import { ApplyRecipeDialog } from '@/components/recipes/ApplyRecipeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -96,19 +96,25 @@ export function Recipes() {
         <div className="space-y-2">
           {substanceArray.map((substance: any, index: number) => (
             <div key={index} className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
-              <div className="font-medium text-gray-900 dark:text-gray-100">
-                {substance.name || 'Nome não disponível'}
-              </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                {substance.formula || 'Fórmula não disponível'}
-              </div>
-              {substance.weight && (
-                <div className="text-sm font-medium text-blue-600 dark:text-blue-400 mt-1">
-                  Quantidade: {substance.weight.toFixed(3)}g
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                    {substance.name || 'Nome não disponível'}
+                  </div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {substance.formula || 'Fórmula não disponível'}
+                  </div>
+                  <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                    {substance.elements?.map((el: any) => `${el.symbol}: ${el.percentage}%`).join(', ') || 'Elementos não disponíveis'}
+                  </div>
                 </div>
-              )}
-              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                {substance.elements?.map((el: any) => `${el.symbol}: ${el.percentage}%`).join(', ') || 'Elementos não disponíveis'}
+                {substance.weight && (
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                      {substance.weight.toFixed(3)}g
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -169,9 +175,17 @@ export function Recipes() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">Carregando receitas...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex justify-between items-center">
+      <div className="mb-8">
         <div className="flex items-center gap-3">
           <TestTube className="h-8 w-8 text-blue-600" />
           <div>
@@ -183,7 +197,6 @@ export function Recipes() {
             </p>
           </div>
         </div>
-        <CreateRecipeDialog onRecipeCreated={fetchRecipes} />
       </div>
 
       {recipes.length === 0 ? (
@@ -196,9 +209,9 @@ export function Recipes() {
           </CardHeader>
           <CardContent>
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              <Plus className="h-12 w-12 mx-auto mb-4" />
+              <TestTube className="h-12 w-12 mx-auto mb-4" />
               <p className="text-lg font-medium mb-2">Nenhuma receita criada</p>
-              <p>Comece criando sua primeira receita de nutrientes!</p>
+              <p>Vá para a calculadora para criar e salvar suas receitas de nutrientes!</p>
             </div>
           </CardContent>
         </Card>

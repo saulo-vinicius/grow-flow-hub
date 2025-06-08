@@ -3,12 +3,15 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Settings, Shield, MessageSquare, CreditCard, LogOut, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { User, Settings, Shield, MessageSquare, CreditCard, LogOut, Edit } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ChangePasswordDialog } from '@/components/account/ChangePasswordDialog';
 import { DeleteAccountDialog } from '@/components/account/DeleteAccountDialog';
 import { SupportDialog } from '@/components/account/SupportDialog';
+import { SubscriptionModal } from '@/components/account/SubscriptionModal';
 import { useNavigate } from 'react-router-dom';
 
 interface UserProfile {
@@ -30,6 +33,8 @@ export function Account() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingName, setEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -65,6 +70,7 @@ export function Account() {
 
       setProfile(profileData);
       setSubscription(subData);
+      setNewName(profileData?.full_name || '');
     } catch (error: any) {
       console.error('Error fetching user data:', error);
       toast({
@@ -74,6 +80,33 @@ export function Account() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateUserName = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ full_name: newName.trim() || null })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setProfile(prev => prev ? { ...prev, full_name: newName.trim() || null } : null);
+      setEditingName(false);
+
+      toast({
+        title: "Nome atualizado",
+        description: "Seu nome foi atualizado com sucesso"
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar nome",
+        variant: "destructive"
+      });
     }
   };
 
@@ -102,6 +135,9 @@ export function Account() {
     );
   }
 
+  // Use user.created_at for member since date, fallback to profile.created_at
+  const memberSince = user?.created_at || profile?.created_at;
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
@@ -128,7 +164,39 @@ export function Account() {
           <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-500">Nome</label>
-              <p className="text-lg">{profile?.full_name || 'Não informado'}</p>
+              {editingName ? (
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Seu nome"
+                  />
+                  <Button onClick={updateUserName} size="sm">
+                    Salvar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setEditingName(false);
+                      setNewName(profile?.full_name || '');
+                    }}
+                    size="sm"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mt-1">
+                  <p className="text-lg">{profile?.full_name || 'Nome não informado'}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setEditingName(true)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">E-mail</label>
@@ -137,7 +205,7 @@ export function Account() {
             <div>
               <label className="text-sm font-medium text-gray-500">Membro desde</label>
               <p className="text-lg">
-                {profile?.created_at ? new Date(profile.created_at).toLocaleDateString('pt-BR') : 'N/A'}
+                {memberSince ? new Date(memberSince).toLocaleDateString('pt-BR') : 'Data não disponível'}
               </p>
             </div>
           </CardContent>
@@ -166,9 +234,11 @@ export function Account() {
                 </p>
               </div>
             )}
-            <Button variant="outline" className="w-full">
-              Gerenciar Assinatura
-            </Button>
+            <SubscriptionModal>
+              <Button variant="outline" className="w-full">
+                Gerenciar Assinatura
+              </Button>
+            </SubscriptionModal>
           </CardContent>
         </Card>
 

@@ -1,6 +1,27 @@
 
 import { Substance, NutrientTarget, CalculationResult, Element } from '@/types/calculator';
 
+// EC calculation constants - conductivity factors for ions (µS/cm per ppm)
+const CONDUCTIVITY_FACTORS: { [key: string]: number } = {
+  'N': 0.71,     // Average for NO3- and NH4+
+  'NO3': 0.71,
+  'NH4': 0.73,
+  'P': 0.35,
+  'K': 0.73,
+  'Ca': 0.53,
+  'Mg': 0.82,
+  'S': 0.52,
+  'Fe': 0.18,
+  'Mn': 0.52,
+  'Zn': 0.31,
+  'B': 0.93,
+  'Cu': 0.31,
+  'Mo': 0.21,
+  'Si': 0.13,
+  'Na': 0.69,
+  'Cl': 0.76
+};
+
 export class CalculatorEngine {
   private substances: Substance[];
   private targets: NutrientTarget;
@@ -18,6 +39,21 @@ export class CalculatorEngine {
     return result;
   }
 
+  private calculateEC(concentrations: { [element: string]: number }): number {
+    let totalEC = 0;
+    
+    // Calculate EC based on ionic conductivity
+    Object.entries(concentrations).forEach(([element, ppm]) => {
+      const factor = CONDUCTIVITY_FACTORS[element];
+      if (factor && ppm > 0) {
+        totalEC += ppm * factor;
+      }
+    });
+    
+    // Convert µS/cm to mS/cm (divide by 1000)
+    return totalEC / 1000;
+  }
+
   private optimizeWeights(): CalculationResult {
     const numSubstances = this.substances.length;
     const weights = new Array(numSubstances).fill(0);
@@ -26,7 +62,6 @@ export class CalculatorEngine {
     const targetElements = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
     
     // Algoritmo simplificado de otimização por tentativa e erro
-    // Na implementação real, seria usado um algoritmo mais sofisticado como simplex ou gradiente
     let bestWeights = [...weights];
     let bestDeviation = Infinity;
     
@@ -51,6 +86,7 @@ export class CalculatorEngine {
     
     const finalConcentrations = this.calculateConcentrations(bestWeights);
     const finalDeviation = this.calculateDeviation(finalConcentrations, this.targets);
+    const ecValue = this.calculateEC(finalConcentrations);
     
     // Converter para formato de resultado
     const substanceWeights: { [key: string]: number } = {};
@@ -65,14 +101,15 @@ export class CalculatorEngine {
     const achievedElements: Element[] = targetElements.map(symbol => ({
       symbol,
       percentage: 0,
-      ppm: finalConcentrations[symbol] || 0
+      ppm: parseFloat((finalConcentrations[symbol] || 0).toFixed(2))
     }));
     
     return {
       substanceWeights,
       totalWeight,
       achievedElements,
-      deviation: finalDeviation
+      deviation: finalDeviation,
+      ecValue
     };
   }
   
@@ -84,18 +121,25 @@ export class CalculatorEngine {
       const weight = weights[substanceIndex]; // peso em gramas
       
       substance.elements.forEach(element => {
-        if (!concentrations[element.symbol]) {
-          concentrations[element.symbol] = 0;
+        let elementSymbol = element.symbol;
+        
+        // Map nitrogen variants to N
+        if (elementSymbol === 'NO3' || elementSymbol === 'NH4' || elementSymbol.includes('N (')) {
+          elementSymbol = 'N';
+        }
+        
+        if (!concentrations[elementSymbol]) {
+          concentrations[elementSymbol] = 0;
         }
         
         // Calcular concentração em ppm
         // weight (g) * percentage (%) / 100 = gramas do elemento
         // (gramas do elemento / volume em L) * 1000 = mg/L = ppm
         const elementWeight = (weight * element.percentage) / 100;
-        const volumeInLiters = this.solutionVolume / 1000; // assumindo volume em mL
+        const volumeInLiters = this.solutionVolume / (this.solutionVolume >= 1000 ? 1000 : 1); // Fix L/mL conversion
         const ppm = (elementWeight / volumeInLiters) * 1000;
         
-        concentrations[element.symbol] += ppm;
+        concentrations[elementSymbol] += ppm;
       });
     });
     

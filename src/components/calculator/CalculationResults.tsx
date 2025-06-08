@@ -51,6 +51,21 @@ export function CalculationResults({ result, substances, solutionVolume, volumeU
           </div>
         </div>
 
+        {/* EC Value */}
+        {result.ecValue !== undefined && (
+          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border dark:border-green-800">
+            <div className="flex justify-between items-center">
+              <span className="font-medium dark:text-white">EC Total:</span>
+              <span className="font-bold text-lg text-green-600 dark:text-green-400">
+                {result.ecValue.toFixed(2)} mS/cm
+              </span>
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+              Condutividade elétrica calculada
+            </div>
+          </div>
+        )}
+
         {/* Elementos alcançados */}
         <div>
           <h4 className="font-medium mb-3 dark:text-white">Concentrações Alcançadas</h4>
