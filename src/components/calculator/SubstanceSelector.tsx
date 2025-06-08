@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,7 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect } from 'react';
 
 interface SubstanceSelectorProps {
-  onSubstanceAdd: (substance: Substance) => void;
+  selectedSubstances: Substance[];
+  onSubstancesChange: (substances: Substance[]) => void;
 }
 
 // Valid elements that can be added to custom substances
@@ -30,6 +32,12 @@ const CONVERSION_FACTORS = {
   'MgO': { element: 'Mg', factor: 0.603 },
   'SO3': { element: 'S', factor: 0.400 }
 };
+
+// Database element interface for proper typing
+interface DbElement {
+  symbol: string;
+  percentage: number;
+}
 
 const PRE_DEFINED_SUBSTANCES: Substance[] = [
   {
@@ -88,7 +96,7 @@ const PRE_DEFINED_SUBSTANCES: Substance[] = [
   }
 ];
 
-export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
+export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: SubstanceSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [customSubstances, setCustomSubstances] = useState<Substance[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -114,16 +122,23 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
 
       if (error) throw error;
 
-      const substances: Substance[] = (data || []).map(item => ({
-        id: item.id,
-        name: item.name,
-        formula: item.formula || '',
-        elements: Array.isArray(item.elements) ? item.elements.map(el => ({
-          symbol: el.symbol,
-          percentage: parseFloat(el.percentage.toFixed(2)), // Limit to 2 decimal places
-          ppm: 0
-        })) : []
-      }));
+      const substances: Substance[] = (data || []).map(item => {
+        // Properly type cast the elements from database
+        const elements = Array.isArray(item.elements) 
+          ? (item.elements as DbElement[]).map(el => ({
+              symbol: el.symbol,
+              percentage: parseFloat(el.percentage.toFixed(2)),
+              ppm: 0
+            }))
+          : [];
+
+        return {
+          id: item.id,
+          name: item.name,
+          formula: item.formula || '',
+          elements
+        };
+      });
 
       setCustomSubstances(substances);
     } catch (error: any) {
@@ -173,6 +188,14 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
     return converted;
   };
 
+  // Convert Element[] to database-compatible format
+  const convertElementsToDbFormat = (elements: Element[]): DbElement[] => {
+    return elements.map(el => ({
+      symbol: el.symbol,
+      percentage: parseFloat(el.percentage.toFixed(2))
+    }));
+  };
+
   const saveCustomSubstance = async () => {
     if (!user || !customName.trim() || customElements.length === 0) {
       toast({
@@ -185,6 +208,7 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
 
     // Convert oxide forms to elemental forms before saving
     const convertedElements = convertOxideToElement(customElements);
+    const dbElements = convertElementsToDbFormat(convertedElements);
 
     try {
       if (editingSubstance) {
@@ -194,7 +218,7 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
           .update({
             name: customName,
             formula: customFormula || null,
-            elements: convertedElements
+            elements: dbElements
           })
           .eq('id', editingSubstance.id);
 
@@ -211,7 +235,7 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
           .insert({
             name: customName,
             formula: customFormula || null,
-            elements: convertedElements,
+            elements: dbElements,
             user_id: user.id
           });
 
@@ -288,7 +312,7 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
       const numValue = parseFloat(value as string);
       updated[index][field] = isNaN(numValue) ? 0 : parseFloat(numValue.toFixed(2));
     } else {
-      updated[index][field] = value as any;
+      updated[index] = { ...updated[index], [field]: value };
     }
     setCustomElements(updated);
   };
@@ -299,6 +323,11 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  const handleSubstanceAdd = (substance: Substance) => {
+    const newSubstances = [...selectedSubstances, substance];
+    onSubstancesChange(newSubstances);
   };
 
   return (
@@ -442,7 +471,7 @@ export function SubstanceSelector({ onSubstanceAdd }: SubstanceSelectorProps) {
                         </Button>
                       </>
                     )}
-                    <Button onClick={() => onSubstanceAdd(substance)} size="sm">
+                    <Button onClick={() => handleSubstanceAdd(substance)} size="sm">
                       Adicionar
                     </Button>
                   </div>
