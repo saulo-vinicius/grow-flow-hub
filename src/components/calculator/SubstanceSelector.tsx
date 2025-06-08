@@ -123,14 +123,16 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       if (error) throw error;
 
       const substances: Substance[] = (data || []).map(item => {
-        // Properly type cast the elements from database
-        const elements = Array.isArray(item.elements) 
-          ? (item.elements as DbElement[]).map(el => ({
-              symbol: el.symbol,
-              percentage: parseFloat(el.percentage.toFixed(2)),
-              ppm: 0
-            }))
-          : [];
+        // Properly type cast the elements from database with validation
+        let elements: Element[] = [];
+        
+        if (Array.isArray(item.elements)) {
+          elements = (item.elements as unknown as DbElement[]).map(el => ({
+            symbol: el.symbol,
+            percentage: parseFloat(el.percentage.toFixed(2)),
+            ppm: 0
+          }));
+        }
 
         return {
           id: item.id,
@@ -141,7 +143,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       });
 
       setCustomSubstances(substances);
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro",
         description: "Erro ao carregar substâncias personalizadas",
@@ -188,8 +190,8 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     return converted;
   };
 
-  // Convert Element[] to database-compatible format
-  const convertElementsToDbFormat = (elements: Element[]): DbElement[] => {
+  // Convert Element[] to database-compatible Json format
+  const convertElementsToJsonFormat = (elements: Element[]) => {
     return elements.map(el => ({
       symbol: el.symbol,
       percentage: parseFloat(el.percentage.toFixed(2))
@@ -208,7 +210,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
 
     // Convert oxide forms to elemental forms before saving
     const convertedElements = convertOxideToElement(customElements);
-    const dbElements = convertElementsToDbFormat(convertedElements);
+    const jsonElements = convertElementsToJsonFormat(convertedElements);
 
     try {
       if (editingSubstance) {
@@ -218,7 +220,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
           .update({
             name: customName,
             formula: customFormula || null,
-            elements: dbElements
+            elements: jsonElements as any
           })
           .eq('id', editingSubstance.id);
 
@@ -235,7 +237,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
           .insert({
             name: customName,
             formula: customFormula || null,
-            elements: dbElements,
+            elements: jsonElements as any,
             user_id: user.id
           });
 
@@ -256,7 +258,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       
       // Refresh list
       fetchCustomSubstances();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro",
         description: "Erro ao salvar substância personalizada",
@@ -284,7 +286,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
       });
 
       fetchCustomSubstances();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Erro",
         description: "Erro ao remover substância personalizada",
