@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -110,6 +109,7 @@ export function BoraGrowCalculator() {
                   solutionVolume={solutionVolume}
                   volumeUnit={volumeUnit}
                   hasCalculationResult={result !== null}
+                  result={result}
                 />
               </div>
             </CardContent>

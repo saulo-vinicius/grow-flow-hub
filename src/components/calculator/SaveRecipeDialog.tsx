@@ -9,7 +9,7 @@ import { Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Substance, NutrientTarget } from '@/types/calculator';
+import { Substance, NutrientTarget, CalculationResult } from '@/types/calculator';
 
 interface SaveRecipeDialogProps {
   substances: Substance[];
@@ -17,9 +17,10 @@ interface SaveRecipeDialogProps {
   solutionVolume: number;
   volumeUnit: string;
   hasCalculationResult: boolean;
+  result: CalculationResult | null;
 }
 
-export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUnit, hasCalculationResult }: SaveRecipeDialogProps) {
+export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUnit, hasCalculationResult, result }: SaveRecipeDialogProps) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -49,6 +50,12 @@ export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUn
       return;
     }
 
+    // Enrich substances with calculated weights
+    const substancesWithWeights = substances.map(substance => ({
+      ...substance,
+      weight: result?.substanceWeights[substance.id] || 0
+    }));
+
     setLoading(true);
     try {
       const { error } = await supabase
@@ -57,7 +64,7 @@ export function SaveRecipeDialog({ substances, targets, solutionVolume, volumeUn
           name,
           description,
           user_id: user.id,
-          substances: substances as any,
+          substances: substancesWithWeights as any,
           elements: targets as any,
           solution_volume: solutionVolume,
           volume_unit: volumeUnit
