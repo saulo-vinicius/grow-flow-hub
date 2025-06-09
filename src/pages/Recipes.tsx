@@ -3,12 +3,15 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Beaker, Trash2, TestTube, Eye } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Calendar, Beaker, Trash2, TestTube, Eye, Search, ChevronDown, ChevronRight } from 'lucide-react';
 import { ApplyRecipeDialog } from '@/components/recipes/ApplyRecipeDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Json } from '@/integrations/supabase/types';
 
 interface Recipe {
@@ -26,6 +29,8 @@ export function Recipes() {
   const { t } = useTranslation();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showTargetConcentrations, setShowTargetConcentrations] = useState<{ [key: string]: boolean }>({});
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -87,6 +92,19 @@ export function Recipes() {
   useEffect(() => {
     fetchRecipes();
   }, [user]);
+
+  // Filter recipes based on search term
+  const filteredRecipes = recipes.filter(recipe => 
+    recipe.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Toggle target concentrations visibility for a specific recipe
+  const toggleTargetConcentrations = (recipeId: string) => {
+    setShowTargetConcentrations(prev => ({
+      ...prev,
+      [recipeId]: !prev[recipeId]
+    }));
+  };
 
   // Helper function to safely parse and render substances with weights
   const renderSubstances = (substances: Json) => {
@@ -216,76 +234,152 @@ export function Recipes() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {recipes.map((recipe) => (
-            <Card key={recipe.id} className="hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-lg">{recipe.name}</CardTitle>
-                    <CardDescription className="mt-2">
-                      {recipe.description || 'Sem descrição'}
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteRecipe(recipe.id)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Beaker className="h-4 w-4" />
-                    <span>{recipe.solution_volume} {recipe.volume_unit}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Calendar className="h-4 w-4" />
-                    <span>{new Date(recipe.created_at).toLocaleDateString('pt-BR')}</span>
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Ver Composição
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Composição da Receita: {recipe.name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4">
-                          <div>
-                            <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">
-                              Substâncias e Quantidades:
-                            </h4>
-                            {renderSubstances(recipe.substances)}
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">
-                              Concentrações Alvo:
-                            </h4>
-                            {renderElements(recipe.elements)}
-                          </div>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                    <ApplyRecipeDialog 
-                      recipeId={recipe.id}
-                      recipeName={recipe.name}
-                      onRecipeApplied={fetchRecipes}
-                    />
-                  </div>
+        <>
+          {/* Search Field */}
+          <div className="mb-6">
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="Buscar receitas por nome..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            {searchTerm && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                {filteredRecipes.length} receita(s) encontrada(s)
+              </p>
+            )}
+          </div>
+
+          {/* No search results */}
+          {filteredRecipes.length === 0 && searchTerm && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <Search className="h-12 w-12 mx-auto mb-4" />
+                  <p className="text-lg font-medium mb-2">Nenhuma receita encontrada</p>
+                  <p>Tente buscar com outros termos ou limpe o campo de busca.</p>
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          )}
+
+          {/* Recipes Grid */}
+          {filteredRecipes.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredRecipes.map((recipe) => (
+                <Card key={recipe.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{recipe.name}</CardTitle>
+                        <CardDescription className="mt-2">
+                          {recipe.description || 'Sem descrição'}
+                        </CardDescription>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir Receita</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Tem certeza de que deseja excluir esta receita? Esta ação é permanente e os dados serão perdidos.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteRecipe(recipe.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Excluir
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Beaker className="h-4 w-4" />
+                        <span>{recipe.solution_volume} {recipe.volume_unit}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(recipe.created_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" className="flex-1">
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver Composição
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Composição da Receita: {recipe.name}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <h4 className="font-medium mb-3 text-gray-900 dark:text-gray-100">
+                                  Substâncias e Quantidades:
+                                </h4>
+                                {renderSubstances(recipe.substances)}
+                              </div>
+                              <div>
+                                <Collapsible 
+                                  open={showTargetConcentrations[recipe.id] || false}
+                                  onOpenChange={() => toggleTargetConcentrations(recipe.id)}
+                                >
+                                  <CollapsibleTrigger asChild>
+                                    <Button 
+                                      variant="ghost" 
+                                      className="flex items-center gap-2 p-0 h-auto font-medium text-gray-900 dark:text-gray-100"
+                                    >
+                                      {showTargetConcentrations[recipe.id] ? 
+                                        <ChevronDown className="h-4 w-4" /> : 
+                                        <ChevronRight className="h-4 w-4" />
+                                      }
+                                      {showTargetConcentrations[recipe.id] ? 
+                                        'Ocultar Concentrações Alvo' : 
+                                        'Mostrar Concentrações Alvo'
+                                      }
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="mt-3">
+                                    {renderElements(recipe.elements)}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </div>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                        <ApplyRecipeDialog 
+                          recipeId={recipe.id}
+                          recipeName={recipe.name}
+                          onRecipeApplied={fetchRecipes}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
