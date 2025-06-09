@@ -110,9 +110,15 @@ export function Recipes() {
   const renderSubstances = (substances: Json) => {
     try {
       const substanceArray = Array.isArray(substances) ? substances : [];
-      return substanceArray.length > 0 ? (
+      
+      // Filter substances to show only those with weight > 0
+      const substancesWithWeight = substanceArray.filter((substance: any) => 
+        substance.weight && substance.weight > 0
+      );
+      
+      return substancesWithWeight.length > 0 ? (
         <div className="space-y-2">
-          {substanceArray.map((substance: any, index: number) => (
+          {substancesWithWeight.map((substance: any, index: number) => (
             <div key={index} className="p-3 border rounded-lg bg-gray-50 dark:bg-gray-800">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
@@ -126,19 +132,17 @@ export function Recipes() {
                     {substance.elements?.map((el: any) => `${el.symbol}: ${el.percentage}%`).join(', ') || 'Elementos não disponíveis'}
                   </div>
                 </div>
-                {substance.weight && (
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                      {substance.weight.toFixed(3)}g
-                    </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                    {substance.weight.toFixed(3)}g
                   </div>
-                )}
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-gray-500 dark:text-gray-400">Nenhuma substância registrada</p>
+        <p className="text-gray-500 dark:text-gray-400">Nenhuma substância com peso calculado</p>
       );
     } catch {
       return <p className="text-gray-500 dark:text-gray-400">Erro ao carregar substâncias</p>;
