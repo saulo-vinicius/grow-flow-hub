@@ -1,8 +1,8 @@
-
 export interface Element {
   symbol: string;
   percentage: number;
   ppm: number;
+  type?: 'elemental' | 'ionic'; // Add type to distinguish elemental vs ionic forms
 }
 
 export interface Substance {

@@ -182,64 +182,17 @@ export class CalculatorEngine {
       }
       
       substance.elements.forEach(element => {
-        let elementSymbol = element.symbol;
+        const elementSymbol = element.symbol;
+        const elementType = element.type || this.inferElementType(elementSymbol);
         
-        // Handle nitrogen forms correctly
-        if (elementSymbol === 'NO3' || elementSymbol.includes('NO3')) {
-          // Calculate NO3- ppm
-          const elementWeight = (weight * element.percentage) / 100;
-          const ppm = (elementWeight / volumeInLiters) * 1000;
-          
-          if (!ionConcentrations['NO3']) ionConcentrations['NO3'] = 0;
-          ionConcentrations['NO3'] += ppm;
-          
-          // Convert NO3- to N: N = NO3- × (14/62)
-          const nFromNO3 = ppm * (14.0 / 62.0);
-          if (!concentrations['N']) concentrations['N'] = 0;
-          concentrations['N'] += nFromNO3;
-          
-          if (weight > 0) {
-            console.log(`  ${elementSymbol}: ${element.percentage}% → ${ppm.toFixed(3)} ppm NO3- → ${nFromNO3.toFixed(3)} ppm N`);
-          }
-          return;
-        }
+        console.log(`Processing ${elementSymbol} (type: ${elementType}, ${element.percentage}%)`);
         
-        if (elementSymbol === 'NH4' || elementSymbol.includes('NH4')) {
-          // Calculate NH4+ ppm
-          const elementWeight = (weight * element.percentage) / 100;
-          const ppm = (elementWeight / volumeInLiters) * 1000;
-          
-          if (!ionConcentrations['NH4']) ionConcentrations['NH4'] = 0;
-          ionConcentrations['NH4'] += ppm;
-          
-          // Convert NH4+ to N: N = NH4+ × (14/18)
-          const nFromNH4 = ppm * (14.0 / 18.0);
-          if (!concentrations['N']) concentrations['N'] = 0;
-          concentrations['N'] += nFromNH4;
-          
-          if (weight > 0) {
-            console.log(`  ${elementSymbol}: ${element.percentage}% → ${ppm.toFixed(3)} ppm NH4+ → ${nFromNH4.toFixed(3)} ppm N`);
-          }
-          return;
-        }
-        
-        // Map other nitrogen variants to N
-        if (elementSymbol.includes('N (') || elementSymbol === 'N') {
-          elementSymbol = 'N';
-        }
-        
-        if (!concentrations[elementSymbol]) {
-          concentrations[elementSymbol] = 0;
-        }
-        
-        // Calculate concentration in ppm using correct formula
-        const elementWeight = (weight * element.percentage) / 100; // grams of element
-        const ppm = (elementWeight / volumeInLiters) * 1000; // mg/L = ppm
-        
-        concentrations[elementSymbol] += ppm;
-        
-        if (weight > 0 && ppm > 0.01) {
-          console.log(`  ${elementSymbol}: ${element.percentage}% → ${ppm.toFixed(3)} ppm`);
+        if (elementType === 'ionic') {
+          // Handle ionic forms (NO3, NH4, SO4, etc.)
+          this.processIonicElement(element, weight, volumeInLiters, concentrations, ionConcentrations);
+        } else {
+          // Handle elemental forms (N, P, K, Ca, Mg, S, etc.)
+          this.processElementalForm(element, weight, volumeInLiters, concentrations);
         }
       });
     });
@@ -257,6 +210,82 @@ export class CalculatorEngine {
     });
     
     return concentrations;
+  }
+
+  private inferElementType(symbol: string): 'elemental' | 'ionic' {
+    // Ionic forms
+    if (['NO3', 'NH4', 'SO4', 'PO4', 'H2PO4', 'HPO4'].includes(symbol) || 
+        symbol.includes('NO3') || symbol.includes('NH4')) {
+      return 'ionic';
+    }
+    // Default to elemental for basic elements
+    return 'elemental';
+  }
+
+  private processIonicElement(
+    element: Element, 
+    weight: number, 
+    volumeInLiters: number, 
+    concentrations: { [element: string]: number },
+    ionConcentrations: { [element: string]: number }
+  ) {
+    const elementSymbol = element.symbol;
+    const elementWeight = (weight * element.percentage) / 100;
+    const ionPpm = (elementWeight / volumeInLiters) * 1000;
+    
+    if (elementSymbol === 'NO3' || elementSymbol.includes('NO3')) {
+      if (!ionConcentrations['NO3']) ionConcentrations['NO3'] = 0;
+      ionConcentrations['NO3'] += ionPpm;
+      
+      // Convert NO3- to N: N = NO3- × (14/62)
+      const nFromNO3 = ionPpm * (14.0 / 62.0);
+      if (!concentrations['N']) concentrations['N'] = 0;
+      concentrations['N'] += nFromNO3;
+      
+      if (weight > 0) {
+        console.log(`  ${elementSymbol}: ${element.percentage}% → ${ionPpm.toFixed(3)} ppm NO3- → ${nFromNO3.toFixed(3)} ppm N`);
+      }
+    } else if (elementSymbol === 'NH4' || elementSymbol.includes('NH4')) {
+      if (!ionConcentrations['NH4']) ionConcentrations['NH4'] = 0;
+      ionConcentrations['NH4'] += ionPpm;
+      
+      // Convert NH4+ to N: N = NH4+ × (14/18)
+      const nFromNH4 = ionPpm * (14.0 / 18.0);
+      if (!concentrations['N']) concentrations['N'] = 0;
+      concentrations['N'] += nFromNH4;
+      
+      if (weight > 0) {
+        console.log(`  ${elementSymbol}: ${element.percentage}% → ${ionPpm.toFixed(3)} ppm NH4+ → ${nFromNH4.toFixed(3)} ppm N`);
+      }
+    }
+  }
+
+  private processElementalForm(
+    element: Element, 
+    weight: number, 
+    volumeInLiters: number, 
+    concentrations: { [element: string]: number }
+  ) {
+    let elementSymbol = element.symbol;
+    
+    // Clean up element symbol variations
+    if (elementSymbol.includes('N (') || elementSymbol === 'N') {
+      elementSymbol = 'N';
+    }
+    
+    if (!concentrations[elementSymbol]) {
+      concentrations[elementSymbol] = 0;
+    }
+    
+    // Calculate concentration in ppm using correct formula
+    const elementWeight = (weight * element.percentage) / 100; // grams of element
+    const ppm = (elementWeight / volumeInLiters) * 1000; // mg/L = ppm
+    
+    concentrations[elementSymbol] += ppm;
+    
+    if (weight > 0 && ppm > 0.01) {
+      console.log(`  ${elementSymbol}: ${element.percentage}% → ${ppm.toFixed(3)} ppm (elemental)`);
+    }
   }
   
   private calculateDeviation(achieved: { [element: string]: number }, targets: NutrientTarget): number {

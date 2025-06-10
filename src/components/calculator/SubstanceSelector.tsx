@@ -45,8 +45,8 @@ const PRE_DEFINED_SUBSTANCES: Substance[] = [
     name: 'Nitrato de Cálcio',
     formula: 'Ca(NO3)2·4H2O',
     elements: [
-      { symbol: 'N', percentage: 11.86, ppm: 0 },
-      { symbol: 'Ca', percentage: 16.97, ppm: 0 }
+      { symbol: 'NO3', percentage: 11.86, ppm: 0, type: 'ionic' },
+      { symbol: 'Ca', percentage: 16.97, ppm: 0, type: 'elemental' }
     ]
   },
   {
@@ -54,8 +54,8 @@ const PRE_DEFINED_SUBSTANCES: Substance[] = [
     name: 'Nitrato de Potássio',
     formula: 'KNO3',
     elements: [
-      { symbol: 'N', percentage: 13.85, ppm: 0 },
-      { symbol: 'K', percentage: 38.67, ppm: 0 }
+      { symbol: 'NO3', percentage: 13.85, ppm: 0, type: 'ionic' },
+      { symbol: 'K', percentage: 38.67, ppm: 0, type: 'elemental' }
     ]
   },
   {
@@ -63,8 +63,8 @@ const PRE_DEFINED_SUBSTANCES: Substance[] = [
     name: 'Sulfato de Magnésio',
     formula: 'MgSO4·7H2O',
     elements: [
-      { symbol: 'Mg', percentage: 9.86, ppm: 0 },
-      { symbol: 'S', percentage: 13.01, ppm: 0 }
+      { symbol: 'Mg', percentage: 9.86, ppm: 0, type: 'elemental' },
+      { symbol: 'S', percentage: 13.01, ppm: 0, type: 'elemental' }
     ]
   },
   {
@@ -72,8 +72,8 @@ const PRE_DEFINED_SUBSTANCES: Substance[] = [
     name: 'Fosfato Monoamônico',
     formula: 'NH4H2PO4',
     elements: [
-      { symbol: 'N', percentage: 12.17, ppm: 0 },
-      { symbol: 'P', percentage: 26.95, ppm: 0 }
+      { symbol: 'NH4', percentage: 12.17, ppm: 0, type: 'ionic' },
+      { symbol: 'P', percentage: 26.95, ppm: 0, type: 'elemental' }
     ]
   },
   {
@@ -81,8 +81,8 @@ const PRE_DEFINED_SUBSTANCES: Substance[] = [
     name: 'Fosfato Monopotássico',
     formula: 'KH2PO4',
     elements: [
-      { symbol: 'P', percentage: 22.76, ppm: 0 },
-      { symbol: 'K', percentage: 28.73, ppm: 0 }
+      { symbol: 'P', percentage: 22.76, ppm: 0, type: 'elemental' },
+      { symbol: 'K', percentage: 28.73, ppm: 0, type: 'elemental' }
     ]
   },
   {
@@ -90,8 +90,8 @@ const PRE_DEFINED_SUBSTANCES: Substance[] = [
     name: 'Sulfato de Potássio',
     formula: 'K2SO4',
     elements: [
-      { symbol: 'K', percentage: 44.87, ppm: 0 },
-      { symbol: 'S', percentage: 18.40, ppm: 0 }
+      { symbol: 'K', percentage: 44.87, ppm: 0, type: 'elemental' },
+      { symbol: 'S', percentage: 18.40, ppm: 0, type: 'elemental' }
     ]
   }
 ];
@@ -304,7 +304,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
   };
 
   const addElement = () => {
-    setCustomElements([...customElements, { symbol: 'N', percentage: 0, ppm: 0 }]);
+    setCustomElements([...customElements, { symbol: 'N', percentage: 0, ppm: 0, type: 'elemental' }]);
   };
 
   const updateElement = (index: number, field: keyof Element, value: string | number) => {
