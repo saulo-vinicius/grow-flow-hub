@@ -72,8 +72,8 @@ export class CalculatorEngine {
       let ionSymbol = element;
       
       // Map elements to their ionic forms for EC calculation
-      if (element === 'N') {
-        // Skip N total for EC - we calculate NO3 and NH4 separately
+      if (element === 'NO3_N' || element === 'NH4_N') {
+        // Skip individual N forms for EC - we calculate NO3 and NH4 separately
         return;
       } else if (element === 'P') {
         ionSymbol = 'H2PO4'; // Assume phosphate as dihydrogen phosphate
@@ -107,8 +107,8 @@ export class CalculatorEngine {
     const numSubstances = this.substances.length;
     const weights = new Array(numSubstances).fill(0);
     
-    // Target elements for optimization
-    const targetElements = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
+    // Target elements for optimization - now using separate N forms
+    const targetElements = ['NO3_N', 'NH4_N', 'P', 'K', 'Ca', 'Mg', 'S', 'Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
     
     // Simple optimization algorithm
     let bestWeights = [...weights];
@@ -146,7 +146,7 @@ export class CalculatorEngine {
       substanceWeights[substance.id] = weight;
       totalWeight += weight;
     });
-    
+
     const achievedElements: Element[] = targetElements.map(symbol => ({
       symbol,
       percentage: 0,
@@ -237,25 +237,25 @@ export class CalculatorEngine {
       if (!ionConcentrations['NO3']) ionConcentrations['NO3'] = 0;
       ionConcentrations['NO3'] += ionPpm;
       
-      // Convert NO3- to N: N = NO3- × (14/62)
+      // Convert NO3- to N: N = NO3- × (14/62) and store as NO3_N
       const nFromNO3 = ionPpm * (14.0 / 62.0);
-      if (!concentrations['N']) concentrations['N'] = 0;
-      concentrations['N'] += nFromNO3;
+      if (!concentrations['NO3_N']) concentrations['NO3_N'] = 0;
+      concentrations['NO3_N'] += nFromNO3;
       
       if (weight > 0) {
-        console.log(`  ${elementSymbol}: ${element.percentage}% → ${ionPpm.toFixed(3)} ppm NO3- → ${nFromNO3.toFixed(3)} ppm N`);
+        console.log(`  ${elementSymbol}: ${element.percentage}% → ${ionPpm.toFixed(3)} ppm NO3- → ${nFromNO3.toFixed(3)} ppm N(NO3-)`);
       }
     } else if (elementSymbol === 'NH4' || elementSymbol.includes('NH4')) {
       if (!ionConcentrations['NH4']) ionConcentrations['NH4'] = 0;
       ionConcentrations['NH4'] += ionPpm;
       
-      // Convert NH4+ to N: N = NH4+ × (14/18)
+      // Convert NH4+ to N: N = NH4+ × (14/18) and store as NH4_N
       const nFromNH4 = ionPpm * (14.0 / 18.0);
-      if (!concentrations['N']) concentrations['N'] = 0;
-      concentrations['N'] += nFromNH4;
+      if (!concentrations['NH4_N']) concentrations['NH4_N'] = 0;
+      concentrations['NH4_N'] += nFromNH4;
       
       if (weight > 0) {
-        console.log(`  ${elementSymbol}: ${element.percentage}% → ${ionPpm.toFixed(3)} ppm NH4+ → ${nFromNH4.toFixed(3)} ppm N`);
+        console.log(`  ${elementSymbol}: ${element.percentage}% → ${ionPpm.toFixed(3)} ppm NH4+ → ${nFromNH4.toFixed(3)} ppm N(NH4+)`);
       }
     }
   }

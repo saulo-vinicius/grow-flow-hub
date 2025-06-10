@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,7 +18,7 @@ export function BoraGrowCalculator() {
   const [activePreset, setActivePreset] = useState<'vegetative' | 'flowering' | null>('vegetative');
 
   const [targets, setTargets] = useState<NutrientTarget>({
-    N: 200, P: 50, K: 300, Ca: 200, Mg: 50, S: 100,
+    NO3_N: 180, NH4_N: 20, P: 50, K: 300, Ca: 200, Mg: 50, S: 100,
     Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
     Si: 0, Na: 0, Cl: 0
   });
@@ -28,7 +29,7 @@ export function BoraGrowCalculator() {
 
   const setVegetativeTargets = () => {
     setTargets({
-      N: 200, P: 50, K: 250, Ca: 200, Mg: 50, S: 100,
+      NO3_N: 180, NH4_N: 20, P: 50, K: 250, Ca: 200, Mg: 50, S: 100,
       Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
       Si: 0, Na: 0, Cl: 0
     });
@@ -37,7 +38,7 @@ export function BoraGrowCalculator() {
 
   const setFloweringTargets = () => {
     setTargets({
-      N: 150, P: 70, K: 350, Ca: 180, Mg: 60, S: 120,
+      NO3_N: 120, NH4_N: 30, P: 70, K: 350, Ca: 180, Mg: 60, S: 120,
       Fe: 3, Mn: 0.5, Zn: 0.3, B: 0.5, Cu: 0.1, Mo: 0.05,
       Si: 0, Na: 0, Cl: 0
     });

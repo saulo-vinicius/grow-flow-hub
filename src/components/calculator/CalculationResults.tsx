@@ -12,6 +12,11 @@ interface CalculationResultsProps {
 export function CalculationResults({ result, substances, solutionVolume, volumeUnit }: CalculationResultsProps) {
   if (!result) return null;
 
+  // Calculate total nitrogen for display
+  const no3N = result.achievedElements.find(e => e.symbol === 'NO3_N')?.ppm || 0;
+  const nh4N = result.achievedElements.find(e => e.symbol === 'NH4_N')?.ppm || 0;
+  const totalN = no3N + nh4N;
+
   return (
     <Card>
       <CardHeader>
@@ -66,18 +71,46 @@ export function CalculationResults({ result, substances, solutionVolume, volumeU
           </div>
         )}
 
+        {/* Nitrogen Summary */}
+        {totalN > 0 && (
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border dark:border-blue-800">
+            <h5 className="font-medium mb-2 dark:text-white">Resumo do Nitrogênio</h5>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="dark:text-gray-300">N(NO₃⁻):</span>
+                <span className="font-medium dark:text-white">{no3N.toFixed(2)} ppm</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="dark:text-gray-300">N(NH₄⁺):</span>
+                <span className="font-medium dark:text-white">{nh4N.toFixed(2)} ppm</span>
+              </div>
+              <div className="flex justify-between border-t pt-1 mt-2">
+                <span className="font-medium dark:text-white">N Total:</span>
+                <span className="font-bold dark:text-white">{totalN.toFixed(2)} ppm</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Elementos alcançados */}
         <div>
           <h4 className="font-medium mb-3 dark:text-white">Concentrações Alcançadas</h4>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {result.achievedElements.map((element) => (
-              <div key={element.symbol} className="p-3 border dark:border-gray-700 rounded-lg text-center bg-white dark:bg-gray-800">
-                <div className="font-medium text-lg dark:text-white">{element.symbol}</div>
-                <div className="text-sm dark:text-gray-300">
-                  {element.ppm ? `${element.ppm.toFixed(2)} ppm` : `${element.percentage.toFixed(2)}%`}
+            {result.achievedElements.map((element) => {
+              // Display nitrogen forms with better labels
+              let displaySymbol = element.symbol;
+              if (element.symbol === 'NO3_N') displaySymbol = 'N(NO₃⁻)';
+              if (element.symbol === 'NH4_N') displaySymbol = 'N(NH₄⁺)';
+              
+              return (
+                <div key={element.symbol} className="p-3 border dark:border-gray-700 rounded-lg text-center bg-white dark:bg-gray-800">
+                  <div className="font-medium text-lg dark:text-white">{displaySymbol}</div>
+                  <div className="text-sm dark:text-gray-300">
+                    {element.ppm ? `${element.ppm.toFixed(2)} ppm` : `${element.percentage.toFixed(2)}%`}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

@@ -1,3 +1,4 @@
+
 export interface Element {
   symbol: string;
   percentage: number;
@@ -13,7 +14,8 @@ export interface Substance {
 }
 
 export interface NutrientTarget {
-  N: number;
+  NO3_N: number; // N from NO3- in ppm
+  NH4_N: number; // N from NH4+ in ppm
   P: number;
   K: number;
   Ca: number;

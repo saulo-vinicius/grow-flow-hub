@@ -20,14 +20,15 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
 
   const resetTargets = () => {
     onTargetsChange({
-      N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0,
+      NO3_N: 0, NH4_N: 0, P: 0, K: 0, Ca: 0, Mg: 0, S: 0,
       Fe: 0, Mn: 0, Zn: 0, B: 0, Cu: 0, Mo: 0,
       Si: 0, Na: 0, Cl: 0
     });
   };
 
   const macronutrients = [
-    { key: 'N' as keyof NutrientTarget, label: 'Nitrogênio (N)', unit: 'ppm' },
+    { key: 'NO3_N' as keyof NutrientTarget, label: 'N(NO₃⁻)', unit: 'ppm' },
+    { key: 'NH4_N' as keyof NutrientTarget, label: 'N(NH₄⁺)', unit: 'ppm' },
     { key: 'P' as keyof NutrientTarget, label: 'Fósforo (P)', unit: 'ppm' },
     { key: 'K' as keyof NutrientTarget, label: 'Potássio (K)', unit: 'ppm' },
     { key: 'Ca' as keyof NutrientTarget, label: 'Cálcio (Ca)', unit: 'ppm' },
@@ -46,6 +47,9 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
     { key: 'Na' as keyof NutrientTarget, label: 'Sódio (Na)', unit: 'ppm' },
     { key: 'Cl' as keyof NutrientTarget, label: 'Cloro (Cl)', unit: 'ppm' },
   ];
+
+  // Calculate total nitrogen for display
+  const totalN = targets.NO3_N + targets.NH4_N;
 
   return (
     <div className="space-y-6">
@@ -74,6 +78,15 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
             </div>
           ))}
         </div>
+        
+        {/* Display total nitrogen */}
+        {totalN > 0 && (
+          <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+            <div className="text-sm text-blue-700 dark:text-blue-300">
+              <strong>N Total: {totalN.toFixed(1)} ppm</strong> (NO₃⁻ + NH₄⁺)
+            </div>
+          </div>
+        )}
       </div>
 
       <div>
