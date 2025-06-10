@@ -1,25 +1,48 @@
 
 import { Substance, NutrientTarget, CalculationResult, Element } from '@/types/calculator';
 
-// EC calculation constants - conductivity factors for ions (µS/cm per ppm)
-const CONDUCTIVITY_FACTORS: { [key: string]: number } = {
-  'N': 0.71,     // Average for NO3- and NH4+
-  'NO3': 0.71,
-  'NH4': 0.73,
-  'P': 0.35,
-  'K': 0.73,
-  'Ca': 0.53,
-  'Mg': 0.82,
-  'S': 0.52,
-  'Fe': 0.18,
-  'Mn': 0.52,
-  'Zn': 0.31,
-  'B': 0.93,
-  'Cu': 0.31,
-  'Mo': 0.21,
-  'Si': 0.13,
-  'Na': 0.69,
-  'Cl': 0.76
+// Molar conductivity constants from HydroBuddy (S·cm²/mol)
+const MOLAR_CONDUCTIVITY: { [key: string]: number } = {
+  'NO3': 71.4,    // Nitrate
+  'NH4': 73.4,    // Ammonium
+  'K': 73.5,      // Potassium
+  'Ca': 119.0,    // Calcium
+  'Mg': 106.1,    // Magnesium
+  'H2PO4': 36.0,  // Dihydrogen phosphate
+  'HPO4': 57.0,   // Hydrogen phosphate
+  'SO4': 160.0,   // Sulfate
+  'Fe': 68.0,     // Iron (Fe3+)
+  'Mn': 53.5,     // Manganese
+  'Zn': 52.8,     // Zinc
+  'B': 21.0,      // Boron (as borate)
+  'Cu': 53.6,     // Copper
+  'Mo': 74.5,     // Molybdenum (as molybdate)
+  'Si': 31.0,     // Silicon (as silicate)
+  'Na': 50.1,     // Sodium
+  'Cl': 76.3      // Chloride
+};
+
+// Molar masses (g/mol)
+const MOLAR_MASSES: { [key: string]: number } = {
+  'NO3': 62.0,    // NO3-
+  'NH4': 18.0,    // NH4+
+  'K': 39.1,      // K+
+  'Ca': 40.1,     // Ca2+
+  'Mg': 24.3,     // Mg2+
+  'H2PO4': 97.0,  // H2PO4-
+  'HPO4': 96.0,   // HPO42-
+  'SO4': 96.1,    // SO42-
+  'Fe': 55.8,     // Fe3+
+  'Mn': 54.9,     // Mn2+
+  'Zn': 65.4,     // Zn2+
+  'B': 10.8,      // B (as borate)
+  'Cu': 63.5,     // Cu2+
+  'Mo': 95.9,     // Mo (as molybdate)
+  'Si': 28.1,     // Si
+  'Na': 23.0,     // Na+
+  'Cl': 35.5,     // Cl-
+  'P': 31.0,      // P (for conversion)
+  'N': 14.0       // N (for conversion)
 };
 
 export class CalculatorEngine {
@@ -34,7 +57,6 @@ export class CalculatorEngine {
   }
 
   calculate(): CalculationResult {
-    // Implementação do algoritmo de otimização
     const result = this.optimizeWeights();
     return result;
   }
@@ -42,34 +64,61 @@ export class CalculatorEngine {
   private calculateEC(concentrations: { [element: string]: number }): number {
     let totalEC = 0;
     
-    // Calculate EC based on ionic conductivity
+    console.log('=== EC Calculation ===');
+    console.log('PPM concentrations:', concentrations);
+    
+    // Calculate EC using proper molar conductivity formula
     Object.entries(concentrations).forEach(([element, ppm]) => {
-      const factor = CONDUCTIVITY_FACTORS[element];
-      if (factor && ppm > 0) {
-        totalEC += ppm * factor;
+      let ionSymbol = element;
+      
+      // Map elements to their ionic forms for EC calculation
+      if (element === 'N') {
+        // Skip N total for EC - we calculate NO3 and NH4 separately
+        return;
+      } else if (element === 'P') {
+        ionSymbol = 'H2PO4'; // Assume phosphate as dihydrogen phosphate
+      } else if (element === 'S') {
+        ionSymbol = 'SO4'; // Sulfur as sulfate
+      }
+      
+      const molarMass = MOLAR_MASSES[ionSymbol];
+      const molarConductivity = MOLAR_CONDUCTIVITY[ionSymbol];
+      
+      if (molarMass && molarConductivity && ppm > 0) {
+        // Convert ppm to mol/L: ppm / (molar_mass * 1000)
+        const molPerL = ppm / (molarMass * 1000);
+        
+        // EC contribution: molar_conductivity * concentration_mol/L
+        const ecContribution = molarConductivity * molPerL;
+        totalEC += ecContribution;
+        
+        console.log(`${ionSymbol}: ${ppm.toFixed(2)} ppm → ${molPerL.toFixed(6)} mol/L → EC: ${ecContribution.toFixed(4)} mS/cm`);
       }
     });
     
-    // Convert µS/cm to mS/cm (divide by 1000)
-    return totalEC / 1000;
+    // Convert from S/cm to mS/cm (already in correct units with our constants)
+    const finalEC = totalEC;
+    console.log(`Total EC: ${finalEC.toFixed(3)} mS/cm`);
+    
+    return parseFloat(finalEC.toFixed(3));
   }
 
   private optimizeWeights(): CalculationResult {
     const numSubstances = this.substances.length;
     const weights = new Array(numSubstances).fill(0);
     
-    // Elementos que queremos calcular
+    // Target elements for optimization
     const targetElements = ['N', 'P', 'K', 'Ca', 'Mg', 'S', 'Fe', 'Mn', 'Zn', 'B', 'Cu', 'Mo'];
     
-    // Algoritmo simplificado de otimização por tentativa e erro
+    // Simple optimization algorithm
     let bestWeights = [...weights];
     let bestDeviation = Infinity;
     
-    // Múltiplas tentativas com diferentes combinações
+    // Multiple attempts with different combinations
     for (let iteration = 0; iteration < 1000; iteration++) {
-      // Gerar pesos aleatórios pequenos
+      // Generate small random weights
       for (let i = 0; i < numSubstances; i++) {
-        weights[i] = Math.random() * 5; // até 5g por substância
+        weights[i] = Math.random() * 5; // up to 5g per substance
       }
       
       const achievedConcentrations = this.calculateConcentrations(weights);
@@ -81,14 +130,14 @@ export class CalculatorEngine {
       }
     }
     
-    // Refinamento com hill climbing
+    // Refinement with hill climbing
     bestWeights = this.refineWeights(bestWeights);
     
     const finalConcentrations = this.calculateConcentrations(bestWeights);
     const finalDeviation = this.calculateDeviation(finalConcentrations, this.targets);
     const ecValue = this.calculateEC(finalConcentrations);
     
-    // Converter para formato de resultado
+    // Convert to result format
     const substanceWeights: { [key: string]: number } = {};
     let totalWeight = 0;
     
@@ -115,16 +164,67 @@ export class CalculatorEngine {
   
   private calculateConcentrations(weights: number[]): { [element: string]: number } {
     const concentrations: { [element: string]: number } = {};
+    const ionConcentrations: { [element: string]: number } = {};
     
-    // Para cada elemento, somar a contribuição de cada substância
+    console.log('=== Concentration Calculation ===');
+    console.log('Solution volume:', this.solutionVolume, 'mL');
+    
+    // Convert volume to liters for calculations
+    const volumeInLiters = this.solutionVolume / 1000;
+    console.log('Volume in liters:', volumeInLiters);
+    
+    // Calculate concentrations for each substance
     this.substances.forEach((substance, substanceIndex) => {
-      const weight = weights[substanceIndex]; // peso em gramas
+      const weight = weights[substanceIndex]; // weight in grams
+      
+      if (weight > 0) {
+        console.log(`\n--- ${substance.name} (${weight.toFixed(3)}g) ---`);
+      }
       
       substance.elements.forEach(element => {
         let elementSymbol = element.symbol;
         
-        // Map nitrogen variants to N
-        if (elementSymbol === 'NO3' || elementSymbol === 'NH4' || elementSymbol.includes('N (')) {
+        // Handle nitrogen forms correctly
+        if (elementSymbol === 'NO3' || elementSymbol.includes('NO3')) {
+          // Calculate NO3- ppm
+          const elementWeight = (weight * element.percentage) / 100;
+          const ppm = (elementWeight / volumeInLiters) * 1000;
+          
+          if (!ionConcentrations['NO3']) ionConcentrations['NO3'] = 0;
+          ionConcentrations['NO3'] += ppm;
+          
+          // Convert NO3- to N: N = NO3- × (14/62)
+          const nFromNO3 = ppm * (14.0 / 62.0);
+          if (!concentrations['N']) concentrations['N'] = 0;
+          concentrations['N'] += nFromNO3;
+          
+          if (weight > 0) {
+            console.log(`  ${elementSymbol}: ${element.percentage}% → ${ppm.toFixed(3)} ppm NO3- → ${nFromNO3.toFixed(3)} ppm N`);
+          }
+          return;
+        }
+        
+        if (elementSymbol === 'NH4' || elementSymbol.includes('NH4')) {
+          // Calculate NH4+ ppm
+          const elementWeight = (weight * element.percentage) / 100;
+          const ppm = (elementWeight / volumeInLiters) * 1000;
+          
+          if (!ionConcentrations['NH4']) ionConcentrations['NH4'] = 0;
+          ionConcentrations['NH4'] += ppm;
+          
+          // Convert NH4+ to N: N = NH4+ × (14/18)
+          const nFromNH4 = ppm * (14.0 / 18.0);
+          if (!concentrations['N']) concentrations['N'] = 0;
+          concentrations['N'] += nFromNH4;
+          
+          if (weight > 0) {
+            console.log(`  ${elementSymbol}: ${element.percentage}% → ${ppm.toFixed(3)} ppm NH4+ → ${nFromNH4.toFixed(3)} ppm N`);
+          }
+          return;
+        }
+        
+        // Map other nitrogen variants to N
+        if (elementSymbol.includes('N (') || elementSymbol === 'N') {
           elementSymbol = 'N';
         }
         
@@ -132,15 +232,28 @@ export class CalculatorEngine {
           concentrations[elementSymbol] = 0;
         }
         
-        // Calcular concentração em ppm
-        // weight (g) * percentage (%) / 100 = gramas do elemento
-        // (gramas do elemento / volume em L) * 1000 = mg/L = ppm
-        const elementWeight = (weight * element.percentage) / 100;
-        const volumeInLiters = this.solutionVolume / (this.solutionVolume >= 1000 ? 1000 : 1); // Fix L/mL conversion
-        const ppm = (elementWeight / volumeInLiters) * 1000;
+        // Calculate concentration in ppm using correct formula
+        const elementWeight = (weight * element.percentage) / 100; // grams of element
+        const ppm = (elementWeight / volumeInLiters) * 1000; // mg/L = ppm
         
         concentrations[elementSymbol] += ppm;
+        
+        if (weight > 0 && ppm > 0.01) {
+          console.log(`  ${elementSymbol}: ${element.percentage}% → ${ppm.toFixed(3)} ppm`);
+        }
       });
+    });
+    
+    // Add ion concentrations for EC calculation
+    Object.entries(ionConcentrations).forEach(([ion, ppm]) => {
+      concentrations[ion] = ppm;
+    });
+    
+    console.log('\n=== Final Concentrations ===');
+    Object.entries(concentrations).forEach(([element, ppm]) => {
+      if (ppm > 0.01) {
+        console.log(`${element}: ${ppm.toFixed(3)} ppm`);
+      }
     });
     
     return concentrations;
@@ -176,14 +289,14 @@ export class CalculatorEngine {
       for (let i = 0; i < refined.length; i++) {
         const originalWeight = refined[i];
         
-        // Tentar aumentar
+        // Try increasing
         refined[i] = originalWeight + stepSize;
         const increaseDeviation = this.calculateDeviation(
           this.calculateConcentrations(refined), 
           this.targets
         );
         
-        // Tentar diminuir
+        // Try decreasing
         refined[i] = Math.max(0, originalWeight - stepSize);
         const decreaseDeviation = this.calculateDeviation(
           this.calculateConcentrations(refined), 
@@ -197,7 +310,7 @@ export class CalculatorEngine {
           this.targets
         );
         
-        // Escolher a melhor opção
+        // Choose the best option
         if (increaseDeviation < originalDeviation && increaseDeviation <= decreaseDeviation) {
           refined[i] = originalWeight + stepSize;
           improved = true;
