@@ -27,7 +27,6 @@ export function CollapsibleSection({
         <Button 
           variant="ghost" 
           className="flex w-full justify-between items-center p-0 h-auto font-medium text-left hover:bg-transparent"
-          onClick={onToggle}
         >
           <div className="flex flex-col items-start">
             <span>{title}</span>

@@ -354,8 +354,16 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
   const updateElement = (index: number, field: keyof Element, value: string | number) => {
     const updated = [...customElements];
     if (field === 'percentage') {
-      const numValue = parseFloat(value as string);
-      updated[index][field] = isNaN(numValue) ? 0 : parseFloat(numValue.toFixed(2));
+      const stringValue = value as string;
+      
+      // Permitir entrada que começa com "0." mas validar o valor final
+      if (stringValue === '' || stringValue === '0' || /^\d*\.?\d*$/.test(stringValue)) {
+        const numValue = parseFloat(stringValue);
+        // Se é um número válido ou está sendo digitado (string vazia, "0.", etc)
+        if (stringValue === '' || stringValue === '0.' || (!isNaN(numValue) && numValue >= 0)) {
+          updated[index][field] = stringValue === '' ? 0 : parseFloat(stringValue) || 0;
+        }
+      }
     } else {
       updated[index] = { ...updated[index], [field]: value };
     }
@@ -486,13 +494,11 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                             </Select>
                             <div className="flex-1">
                               <Input
-                                type="number"
-                                value={element.percentage || ''}
+                                type="text"
+                                value={element.percentage === 0 ? '' : element.percentage.toString()}
                                 onChange={(e) => updateElement(index, 'percentage', e.target.value)}
                                 placeholder="% do elemento"
                                 className={hasError ? 'border-red-500' : ''}
-                                min="0"
-                                step="0.01"
                               />
                               {hasError && (
                                 <p className="text-red-500 text-xs mt-1">{validationErrors[errorKey]}</p>
