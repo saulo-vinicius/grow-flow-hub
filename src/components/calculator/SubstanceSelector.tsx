@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -534,6 +535,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                 size="sm"
                 onClick={clearSearch}
                 className="absolute right-2 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0 hover:bg-gray-100"
+                aria-label="Limpar busca"
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -550,7 +552,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                     <div className="flex items-center gap-2">
                       <div className="font-medium">{substance.name}</div>
                       {isCustom && (
-                        <User className="h-4 w-4 text-blue-500" title="Substância personalizada" />
+                        <User className="h-4 w-4 text-blue-500" aria-label="Substância personalizada" />
                       )}
                     </div>
                     <div className="text-sm text-gray-500">{substance.formula}</div>

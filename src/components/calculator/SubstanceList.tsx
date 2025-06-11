@@ -33,7 +33,7 @@ export function SubstanceList({
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <CollapsibleSection
             title="Substâncias Disponíveis"
             isOpen={!collapsedSections.substanceSelector}
@@ -43,19 +43,17 @@ export function SubstanceList({
             <div />
           </CollapsibleSection>
         </CardHeader>
-        {!collapsedSections.substanceSelector && (
-          <CardContent>
-            <SubstanceSelector 
-              selectedSubstances={substances}
-              onSubstancesChange={onSubstancesChange}
-            />
-          </CardContent>
-        )}
+        <CardContent className={collapsedSections.substanceSelector ? 'hidden' : 'block'}>
+          <SubstanceSelector 
+            selectedSubstances={substances}
+            onSubstancesChange={onSubstancesChange}
+          />
+        </CardContent>
       </Card>
       
       {substances.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-4">
             <CollapsibleSection
               title="Substâncias Selecionadas"
               isOpen={!collapsedSections.substanceList}
@@ -65,31 +63,29 @@ export function SubstanceList({
               <div />
             </CollapsibleSection>
           </CardHeader>
-          {!collapsedSections.substanceList && (
-            <CardContent>
-              <div className="space-y-2">
-                {substances.map((substance) => (
-                  <div key={substance.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="font-medium">{substance.name}</div>
-                      <div className="text-sm text-gray-500">{substance.formula}</div>
-                      <div className="text-xs text-gray-400">
-                        {substance.elements.map(el => `${el.symbol}: ${el.percentage}%`).join(', ')}
-                      </div>
+          <CardContent className={collapsedSections.substanceList ? 'hidden' : 'block'}>
+            <div className="space-y-2">
+              {substances.map((substance) => (
+                <div key={substance.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">{substance.name}</div>
+                    <div className="text-sm text-gray-500">{substance.formula}</div>
+                    <div className="text-xs text-gray-400">
+                      {substance.elements.map(el => `${el.symbol}: ${el.percentage}%`).join(', ')}
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeSubstance(substance.id)}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeSubstance(substance.id)}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
         </Card>
       )}
     </div>
