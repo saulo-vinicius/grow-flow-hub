@@ -1,9 +1,12 @@
 
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { RotateCcw } from 'lucide-react';
 import { NutrientTarget } from '@/types/calculator';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
+import { getNutrientColors } from '@/utils/nutrientColors';
 
 interface NutrientTargetsProps {
   targets: NutrientTarget;
@@ -11,6 +14,8 @@ interface NutrientTargetsProps {
 }
 
 export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsProps) {
+  const [micronutrientsOpen, setMicronutrientsOpen] = useState(false);
+
   const handleTargetChange = (element: keyof NutrientTarget, value: number) => {
     onTargetsChange({
       ...targets,
@@ -51,6 +56,10 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
   // Calculate total nitrogen for display
   const totalN = targets.NO3_N + targets.NH4_N;
 
+  // Count non-zero micronutrients for summary
+  const activeMicronutrients = micronutrients.filter(({ key }) => targets[key] > 0).length;
+  const micronutrientsSummary = `${activeMicronutrients} micronutrientes configurados`;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -63,20 +72,23 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
       <div>
         <h4 className="font-medium mb-3 text-green-700">Macronutrientes</h4>
         <div className="grid grid-cols-2 gap-4">
-          {macronutrients.map(({ key, label }) => (
-            <div key={key}>
-              <Label htmlFor={key} className="text-sm">{label}</Label>
-              <Input
-                id={key}
-                type="number"
-                value={targets[key]}
-                onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
-                className="mt-1"
-                min="0"
-                step="0.1"
-              />
-            </div>
-          ))}
+          {macronutrients.map(({ key, label }) => {
+            const colors = getNutrientColors(key);
+            return (
+              <div key={key}>
+                <Label htmlFor={key} className={`text-sm ${colors.text}`}>{label}</Label>
+                <Input
+                  id={key}
+                  type="number"
+                  value={targets[key]}
+                  onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
+                  className="mt-1"
+                  min="0"
+                  step="0.1"
+                />
+              </div>
+            );
+          })}
         </div>
         
         {/* Display total nitrogen */}
@@ -89,25 +101,33 @@ export function NutrientTargets({ targets, onTargetsChange }: NutrientTargetsPro
         )}
       </div>
 
-      <div>
-        <h4 className="font-medium mb-3 text-blue-700">Micronutrientes</h4>
+      <CollapsibleSection
+        title="Micronutrientes"
+        isOpen={micronutrientsOpen}
+        onToggle={() => setMicronutrientsOpen(!micronutrientsOpen)}
+        summary={micronutrientsSummary}
+        className="text-gray-700"
+      >
         <div className="grid grid-cols-2 gap-4">
-          {micronutrients.map(({ key, label }) => (
-            <div key={key}>
-              <Label htmlFor={key} className="text-sm">{label}</Label>
-              <Input
-                id={key}
-                type="number"
-                value={targets[key]}
-                onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
-                className="mt-1"
-                min="0"
-                step="0.001"
-              />
-            </div>
-          ))}
+          {micronutrients.map(({ key, label }) => {
+            const colors = getNutrientColors(key);
+            return (
+              <div key={key}>
+                <Label htmlFor={key} className={`text-sm ${colors.text}`}>{label}</Label>
+                <Input
+                  id={key}
+                  type="number"
+                  value={targets[key]}
+                  onChange={(e) => handleTargetChange(key, parseFloat(e.target.value) || 0)}
+                  className="mt-1"
+                  min="0"
+                  step="0.001"
+                />
+              </div>
+            );
+          })}
         </div>
-      </div>
+      </CollapsibleSection>
     </div>
   );
 }

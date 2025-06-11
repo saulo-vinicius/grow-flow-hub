@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,10 +12,21 @@ import { SaveRecipeDialog } from '@/components/calculator/SaveRecipeDialog';
 import { CalculatorEngine } from '@/utils/calculatorEngine';
 import { Substance, NutrientTarget, CalculationResult } from '@/types/calculator';
 import { Calculator } from 'lucide-react';
+import { useVolumeConverter, VolumeUnit } from '@/hooks/useVolumeConverter';
 
 export function BoraGrowCalculator() {
   const [substances, setSubstances] = useState<Substance[]>([]);
   const [activePreset, setActivePreset] = useState<'vegetative' | 'flowering' | null>('vegetative');
+  const [result, setResult] = useState<CalculationResult | null>(null);
+  
+  // Volume converter hook
+  const volumeConverter = useVolumeConverter(1000); // 1000mL = 1L default
+
+  // Collapsible states
+  const [collapsedSections, setCollapsedSections] = useState({
+    substanceSelector: false,
+    substanceList: false
+  });
 
   const [targets, setTargets] = useState<NutrientTarget>({
     NO3_N: 180, NH4_N: 20, P: 50, K: 300, Ca: 200, Mg: 50, S: 100,
@@ -23,9 +34,22 @@ export function BoraGrowCalculator() {
     Si: 0, Na: 0, Cl: 0
   });
 
-  const [solutionVolume, setSolutionVolume] = useState(1000);
-  const [volumeUnit, setVolumeUnit] = useState('mL');
-  const [result, setResult] = useState<CalculationResult | null>(null);
+  // Auto-collapse após cálculo
+  useEffect(() => {
+    if (result && result.totalWeight > 0) {
+      setCollapsedSections({
+        substanceSelector: true,
+        substanceList: true
+      });
+    }
+  }, [result]);
+
+  const toggleSection = (section: keyof typeof collapsedSections) => {
+    setCollapsedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
 
   const setVegetativeTargets = () => {
     setTargets({
@@ -51,9 +75,18 @@ export function BoraGrowCalculator() {
       return;
     }
 
-    const engine = new CalculatorEngine(substances, targets, solutionVolume);
+    const engine = new CalculatorEngine(substances, targets, volumeConverter.internalValue);
     const calculationResult = engine.calculate();
     setResult(calculationResult);
+  };
+
+  const handleVolumeChange = (value: string) => {
+    const numValue = parseFloat(value) || 1;
+    volumeConverter.setVolume(numValue, volumeConverter.unit);
+  };
+
+  const handleUnitChange = (newUnit: VolumeUnit) => {
+    volumeConverter.convertToUnit(newUnit);
   };
 
   return (
@@ -82,19 +115,22 @@ export function BoraGrowCalculator() {
                   <Input
                     id="volume"
                     type="number"
-                    value={solutionVolume}
-                    onChange={(e) => setSolutionVolume(parseFloat(e.target.value) || 1000)}
+                    value={volumeConverter.displayValue}
+                    onChange={(e) => handleVolumeChange(e.target.value)}
+                    min="0.1"
+                    step="0.1"
                   />
                 </div>
                 <div>
                   <Label htmlFor="unit">Unidade</Label>
-                  <Select value={volumeUnit} onValueChange={setVolumeUnit}>
+                  <Select value={volumeConverter.unit} onValueChange={handleUnitChange}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="mL">mL</SelectItem>
-                      <SelectItem value="L">L</SelectItem>
+                      <SelectItem value="L">Litros (L)</SelectItem>
+                      <SelectItem value="gal">Galões US (gal)</SelectItem>
+                      <SelectItem value="mL">Mililitros (mL)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -107,8 +143,8 @@ export function BoraGrowCalculator() {
                 <SaveRecipeDialog 
                   substances={substances}
                   targets={targets}
-                  solutionVolume={solutionVolume}
-                  volumeUnit={volumeUnit}
+                  solutionVolume={volumeConverter.internalValue}
+                  volumeUnit="mL"
                   hasCalculationResult={result !== null}
                   result={result}
                 />
@@ -151,7 +187,7 @@ export function BoraGrowCalculator() {
                 targets={targets} 
                 onTargetsChange={(newTargets) => {
                   setTargets(newTargets);
-                  setActivePreset(null); // Reset active preset when manually changing values
+                  setActivePreset(null);
                 }} 
               />
             </CardContent>
@@ -162,14 +198,16 @@ export function BoraGrowCalculator() {
         <div className="space-y-6">
           <SubstanceList 
             substances={substances} 
-            onSubstancesChange={setSubstances} 
+            onSubstancesChange={setSubstances}
+            collapsedSections={collapsedSections}
+            onToggleSection={toggleSection}
           />
           
           <CalculationResults 
             result={result}
             substances={substances}
-            solutionVolume={solutionVolume}
-            volumeUnit={volumeUnit}
+            solutionVolume={volumeConverter.internalValue}
+            volumeUnit="mL"
           />
         </div>
       </div>
