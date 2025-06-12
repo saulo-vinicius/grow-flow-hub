@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -356,18 +355,14 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     if (field === 'percentage') {
       const stringValue = value as string;
       
-      // Permitir entrada de qualquer dígito e ponto decimal
-      if (/^[\d.]*$/.test(stringValue)) {
-        // Verificar se há apenas um ponto decimal
-        const pointCount = (stringValue.match(/\./g) || []).length;
-        if (pointCount <= 1) {
-          // Se tem valor, converter para número, senão manter string vazia para edição
-          if (stringValue === '' || stringValue === '.') {
-            updated[index][field] = 0;
-          } else {
-            const numValue = parseFloat(stringValue);
-            updated[index][field] = isNaN(numValue) ? 0 : numValue;
-          }
+      // Permitir qualquer entrada numérica válida (incluindo decimais)
+      if (stringValue === '' || /^\d*\.?\d*$/.test(stringValue)) {
+        // Converter para número se não estiver vazio
+        if (stringValue === '') {
+          updated[index][field] = 0;
+        } else {
+          const numValue = parseFloat(stringValue);
+          updated[index][field] = isNaN(numValue) ? 0 : numValue;
         }
       }
     } else {
@@ -512,7 +507,9 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                             </Select>
                             <div className="flex-1">
                               <Input
-                                type="text"
+                                type="number"
+                                step="0.001"
+                                min="0"
                                 value={element.percentage === 0 ? '' : element.percentage.toString()}
                                 onChange={(e) => updateElement(index, 'percentage', e.target.value)}
                                 placeholder="% do elemento"
