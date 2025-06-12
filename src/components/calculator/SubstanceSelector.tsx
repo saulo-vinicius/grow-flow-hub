@@ -355,11 +355,11 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     if (field === 'percentage') {
       const stringValue = value as string;
       
-      // Permitir qualquer entrada numérica válida (incluindo decimais)
+      // Permitir entrada de números decimais incluindo casos como "0.", "0.1", ".5"
       if (stringValue === '' || /^\d*\.?\d*$/.test(stringValue)) {
-        // Converter para número se não estiver vazio
-        if (stringValue === '') {
-          updated[index][field] = 0;
+        // Manter como string se terminar com ponto para permitir digitação contínua
+        if (stringValue.endsWith('.') || stringValue === '') {
+          updated[index][field] = stringValue === '' ? 0 : parseFloat(stringValue || '0');
         } else {
           const numValue = parseFloat(stringValue);
           updated[index][field] = isNaN(numValue) ? 0 : numValue;
@@ -510,6 +510,8 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                                 type="number"
                                 step="0.001"
                                 min="0"
+                                inputMode="decimal"
+                                pattern="[0-9]*\.?[0-9]*"
                                 value={element.percentage === 0 ? '' : element.percentage.toString()}
                                 onChange={(e) => updateElement(index, 'percentage', e.target.value)}
                                 placeholder="% do elemento"
