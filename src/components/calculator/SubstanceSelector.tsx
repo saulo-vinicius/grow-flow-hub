@@ -356,12 +356,18 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     if (field === 'percentage') {
       const stringValue = value as string;
       
-      // Permitir entrada que começa com "0." mas validar o valor final
-      if (stringValue === '' || stringValue === '0' || /^\d*\.?\d*$/.test(stringValue)) {
-        const numValue = parseFloat(stringValue);
-        // Se é um número válido ou está sendo digitado (string vazia, "0.", etc)
-        if (stringValue === '' || stringValue === '0.' || (!isNaN(numValue) && numValue >= 0)) {
-          updated[index][field] = stringValue === '' ? 0 : parseFloat(stringValue) || 0;
+      // Permitir entrada de qualquer dígito e ponto decimal
+      if (/^[\d.]*$/.test(stringValue)) {
+        // Verificar se há apenas um ponto decimal
+        const pointCount = (stringValue.match(/\./g) || []).length;
+        if (pointCount <= 1) {
+          // Se tem valor, converter para número, senão manter string vazia para edição
+          if (stringValue === '' || stringValue === '.') {
+            updated[index][field] = 0;
+          } else {
+            const numValue = parseFloat(stringValue);
+            updated[index][field] = isNaN(numValue) ? 0 : numValue;
+          }
         }
       }
     } else {
@@ -389,6 +395,18 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
   };
 
   const handleSubstanceAdd = (substance: Substance) => {
+    // Verificar se a substância já foi adicionada
+    const isDuplicate = selectedSubstances.some(s => s.name === substance.name);
+    
+    if (isDuplicate) {
+      toast({
+        title: "Substância já adicionada",
+        description: "Esta substância já foi adicionada à lista",
+        variant: "destructive"
+      });
+      return;
+    }
+
     const newSubstances = [...selectedSubstances, substance];
     onSubstancesChange(newSubstances);
   };
