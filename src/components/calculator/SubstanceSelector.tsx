@@ -1,4 +1,3 @@
-
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -216,6 +215,13 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     }));
   };
 
+  // Helper function to check if an element is being edited
+  const isEditingElement = (index: number) => {
+    // Verifica se o elemento está sendo editado (campo focado)
+    const inputElement = document.querySelector(`input[data-element-index="${index}"]`);
+    return inputElement === document.activeElement;
+  };
+
   const validateCustomSubstance = () => {
     const errors: {[key: string]: string} = {};
     
@@ -228,7 +234,8 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     }
     
     customElements.forEach((element, index) => {
-      if (element.percentage <= 0) {
+      // Só valida se o percentual for realmente inválido (não apenas zero temporário)
+      if (element.percentage < 0 || (element.percentage === 0 && !isEditingElement(index))) {
         errors[`element_${index}`] = 'Percentual deve ser maior que zero';
       }
     });
@@ -357,15 +364,12 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
     if (field === 'percentage') {
       const stringValue = value as string;
       
-      // Permite entrada vazia, números inteiros, decimais e números que começam com 0.
-      if (stringValue === '' || /^\d*\.?\d*$/.test(stringValue)) {
+      // Permite entrada vazia, números inteiros e decimais (incluindo 0.X)
+      if (stringValue === '' || /^(\d+\.?\d*|\.\d+)$/.test(stringValue) || stringValue === '0.' || stringValue === '.') {
         let numValue: number;
         
-        if (stringValue === '' || stringValue === '.') {
+        if (stringValue === '' || stringValue === '.' || stringValue === '0.') {
           numValue = 0;
-        } else if (stringValue.endsWith('.')) {
-          // Permite digitar números terminados em ponto (ex: "5.")
-          numValue = parseFloat(stringValue.slice(0, -1)) || 0;
         } else {
           numValue = parseFloat(stringValue);
           if (isNaN(numValue)) numValue = 0;
@@ -373,7 +377,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
         
         updated[index][field] = numValue;
       } else {
-        // Se não passou na validação, não atualiza o campo
+        // Se não passou na validação, não atualiza
         return;
       }
     } else {
@@ -524,6 +528,7 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
                                 min="0"
                                 inputMode="decimal"
                                 pattern="[0-9]*\.?[0-9]*"
+                                data-element-index={index}
                                 value={element.percentage === 0 ? '' : element.percentage.toString()}
                                 onChange={(e) => updateElement(index, 'percentage', e.target.value)}
                                 placeholder="% do elemento"
