@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -352,22 +353,33 @@ export function SubstanceSelector({ selectedSubstances, onSubstancesChange }: Su
 
   const updateElement = (index: number, field: keyof Element, value: string | number) => {
     const updated = [...customElements];
+    
     if (field === 'percentage') {
       const stringValue = value as string;
       
-      // Permitir entrada de números decimais incluindo casos como "0.", "0.1", ".5"
+      // Permite entrada vazia, números inteiros, decimais e números que começam com 0.
       if (stringValue === '' || /^\d*\.?\d*$/.test(stringValue)) {
-        // Manter como string se terminar com ponto para permitir digitação contínua
-        if (stringValue.endsWith('.') || stringValue === '') {
-          updated[index][field] = stringValue === '' ? 0 : parseFloat(stringValue || '0');
+        let numValue: number;
+        
+        if (stringValue === '' || stringValue === '.') {
+          numValue = 0;
+        } else if (stringValue.endsWith('.')) {
+          // Permite digitar números terminados em ponto (ex: "5.")
+          numValue = parseFloat(stringValue.slice(0, -1)) || 0;
         } else {
-          const numValue = parseFloat(stringValue);
-          updated[index][field] = isNaN(numValue) ? 0 : numValue;
+          numValue = parseFloat(stringValue);
+          if (isNaN(numValue)) numValue = 0;
         }
+        
+        updated[index][field] = numValue;
+      } else {
+        // Se não passou na validação, não atualiza o campo
+        return;
       }
     } else {
       updated[index] = { ...updated[index], [field]: value };
     }
+    
     setCustomElements(updated);
     
     // Clear validation error for this element
